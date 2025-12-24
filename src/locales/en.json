@@ -1,0 +1,36 @@
+{
+  "common": {
+    "search": "Search",
+    "searchPlaceholder": "Search for movies or TV shows...",
+    "searching": "Searching...",
+    "noResults": "No results found. Try a different search term.",
+    "enterSearchTerm": "Enter a search term to find movies and TV shows.",
+    "searchResultsFor": "Search Results for"
+  },
+  "layout": {
+    "title": "WhatToWatch",
+    "subtitle": "Discover your next favorite movie or TV show"
+  },
+  "home": {
+    "welcomeTitle": "Welcome to WhatToWatch",
+    "welcomeText": "Search for movies and TV shows, filter by country, and discover where to watch them. Start by typing a title in the search box above."
+  },
+  "countries": {
+    "US": "United States",
+    "GB": "United Kingdom",
+    "TR": "Turkey",
+    "DE": "Germany",
+    "FR": "France",
+    "IT": "Italy",
+    "ES": "Spain",
+    "CA": "Canada",
+    "AU": "Australia",
+    "JP": "Japan",
+    "KR": "South Korea",
+    "BR": "Brazil",
+    "MX": "Mexico",
+    "IN": "India",
+    "CN": "China"
+  }
+}
+

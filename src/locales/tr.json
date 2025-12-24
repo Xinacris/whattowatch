@@ -1,0 +1,36 @@
+{
+  "common": {
+    "search": "Ara",
+    "searchPlaceholder": "Film veya dizi ara...",
+    "searching": "Aranıyor...",
+    "noResults": "Sonuç bulunamadı. Farklı bir arama terimi deneyin.",
+    "enterSearchTerm": "Film ve dizileri bulmak için bir arama terimi girin.",
+    "searchResultsFor": "Arama Sonuçları"
+  },
+  "layout": {
+    "title": "WhatToWatch",
+    "subtitle": "Bir sonraki favori filmini veya dizini keşfet"
+  },
+  "home": {
+    "welcomeTitle": "WhatToWatch'a Hoş Geldiniz",
+    "welcomeText": "Film ve dizileri ara, ülkeye göre filtrele ve nerede izleyebileceğini keşfet. Yukarıdaki arama kutusuna bir başlık yazarak başla."
+  },
+  "countries": {
+    "US": "Amerika Birleşik Devletleri",
+    "GB": "Birleşik Krallık",
+    "TR": "Türkiye",
+    "DE": "Almanya",
+    "FR": "Fransa",
+    "IT": "İtalya",
+    "ES": "İspanya",
+    "CA": "Kanada",
+    "AU": "Avustralya",
+    "JP": "Japonya",
+    "KR": "Güney Kore",
+    "BR": "Brezilya",
+    "MX": "Meksika",
+    "IN": "Hindistan",
+    "CN": "Çin"
+  }
+}
+

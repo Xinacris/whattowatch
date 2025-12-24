@@ -1,0 +1,199 @@
+.container {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.card {
+  background-color: var(--bg-primary);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.content {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Country Selector Styles */
+.selector {
+  position: relative;
+}
+
+.countryButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  height: 48px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.countryButton:hover {
+  background-color: var(--bg-hover);
+}
+
+.countryButton:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.countryName {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.countryCode {
+  display: none;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+/* Mobile: Show only country code */
+@media (max-width: 640px) {
+  .countryName {
+    display: none;
+  }
+  
+  .countryCode {
+    display: inline;
+  }
+  
+  .countryButton {
+    padding: 0.75rem 0.875rem;
+    min-width: 4rem;
+  }
+}
+
+.arrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+}
+
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  width: 16rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 20;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.countryItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  color: var(--text-primary);
+}
+
+.countryItem:hover {
+  background-color: var(--bg-hover);
+}
+
+.countryItemSelected {
+  background-color: var(--bg-secondary);
+}
+
+.countryItemName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.checkIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent-color);
+  margin-left: auto;
+}
+
+/* Search Box Styles */
+.searchForm {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  height: 48px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.searchButton {
+  padding: 0.75rem 1.5rem;
+  height: 48px;
+  background-color: var(--accent-color);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.searchButton:hover {
+  background-color: var(--accent-hover);
+  box-shadow: var(--shadow-lg);
+}
+
+.searchButton:active {
+  transform: scale(0.98);
+}

@@ -1,0 +1,22 @@
+.page {
+  padding: 2rem 0;
+}
+
+.welcomeSection {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.welcomeTitle {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.welcomeText {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  max-width: 42rem;
+  margin: 0 auto;
+}

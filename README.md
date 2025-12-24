@@ -49,8 +49,8 @@ User → Search/Filter → API Request → Data Processing → UI Update → Use
 ## 🛠️ Technology Stack
 
 - **Frontend Framework**: React 18+
-- **API**: Watchmode API
-- **HTTP Client**: Axios / Fetch API
+- **API**: TMDB (The Movie Database) API
+- **HTTP Client**: Fetch API
 - **State Management**: React Hooks + Context API
 - **Styling**: CSS Modules / Styled Components / Tailwind CSS
 - **Routing**: React Router
@@ -80,12 +80,51 @@ whattowatch/
 4. **"What's on Netflix?"** → Apply platform filter
 5. **"Save for later"** → Add to favorites
 
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn package manager
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Xinacris/whattowatch.git
+cd whattowatch
+```
+
+### Step 2: Install Dependencies
+```bash
+npm install
+```
+
+### Step 3: Configure Environment Variables
+Create a `.env` file in the root directory:
+```env
+REACT_APP_TMDB_API_KEY=your_api_key_here
+```
+
+### Step 4: Start the Development Server
+```bash
+npm start
+```
+
+The application will open in your browser at `http://localhost:3000`
+
+### Available Scripts
+- `npm start` - Runs the app in development mode
+- `npm run build` - Builds the app for production
+- `npm test` - Launches the test runner
+- `npm run eject` - Ejects from Create React App (one-way operation)
+
 ## 🔐 API Configuration
 
-To use the Watchmode API:
-1. Get your API key from [Watchmode](https://www.watchmode.com/)
-2. Configure the API key as an environment variable
-3. Use it securely in API requests
+To use the TMDB API:
+1. Get your API key from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
+2. Create a `.env` file in the root directory
+3. Add your API key: `REACT_APP_TMDB_API_KEY=your_api_key_here`
+4. Restart the development server for changes to take effect
+
+**Note:** TMDB API is free and provides better search results and movie/TV show data.
 
 ## 🚧 Development Status
 
