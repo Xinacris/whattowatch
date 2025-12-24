@@ -21,7 +21,7 @@ export const detectUserCountry = async () => {
         }
       }
     } catch (error) {
-      console.log('IP geolocation failed, trying fallback methods:', error);
+      // IP geolocation failed, trying fallback methods
     }
 
     // Method 2: Try timezone (reliable fallback)
@@ -106,7 +106,6 @@ export const detectUserCountry = async () => {
     }
 
     // Default fallback
-    console.log('Could not detect country. Timezone:', timezone, 'Locale:', locale);
     return 'US';
   } catch (error) {
     console.error('Error detecting country:', error);

@@ -100,6 +100,10 @@ npm install
 ### Step 3: Configure Environment Variables
 Create a `.env` file in the root directory:
 ```env
+# Option 1: Bearer Token (Preferred)
+REACT_APP_TMDB_API_TOKEN=your_bearer_token_here
+
+# Option 2: API Key (Fallback)
 REACT_APP_TMDB_API_KEY=your_api_key_here
 ```
 
@@ -119,12 +123,22 @@ The application will open in your browser at `http://localhost:3000`
 ## 🔐 API Configuration
 
 To use the TMDB API:
-1. Get your API key from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
+1. Get your API key or Bearer token from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
 2. Create a `.env` file in the root directory
-3. Add your API key: `REACT_APP_TMDB_API_KEY=your_api_key_here`
+3. Add your credentials (Bearer token is preferred):
+   ```env
+   # Option 1: Bearer Token (Preferred)
+   REACT_APP_TMDB_API_TOKEN=your_bearer_token_here
+   
+   # Option 2: API Key (Fallback)
+   REACT_APP_TMDB_API_KEY=your_api_key_here
+   ```
 4. Restart the development server for changes to take effect
 
-**Note:** TMDB API is free and provides better search results and movie/TV show data.
+**Note:** 
+- TMDB API is free and provides better search results and movie/TV show data
+- Bearer token authentication is preferred and more secure
+- If both are provided, Bearer token will be used
 
 ## 🚧 Development Status
 

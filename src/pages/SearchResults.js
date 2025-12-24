@@ -8,7 +8,7 @@ import { searchTitles } from '../services/tmdbApi';
 import styles from './SearchResults.module.css';
 
 const SearchResults = () => {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedCountry, setSelectedCountry] = useState(
@@ -39,14 +39,15 @@ const SearchResults = () => {
         setError(null);
         try {
           const countryToUse = urlCountry || selectedCountry;
-          const data = await searchTitles(query, countryToUse);
           
-          // Console log raw API response
-          console.log('=== TMDB API RAW RESPONSE ===');
-          console.log('Query:', query);
-          console.log('Country:', countryToUse);
-          console.log('Full Response:', data);
-          console.log('===================================');
+          // Map locale to TMDB language code
+          const localeToLanguage = {
+            'en': 'en-US',
+            'tr': 'tr-TR',
+          };
+          const language = localeToLanguage[locale] || 'en-US';
+          
+          const data = await searchTitles(query, countryToUse, language);
           
           // TMDB API returns: { title_results: [...], people_results: [...] }
           let processedResults = [];
@@ -61,18 +62,8 @@ const SearchResults = () => {
             processedResults = [];
           }
           
-          console.log('=== PROCESSED RESULTS ===');
-          console.log('Results Count:', processedResults.length);
-          console.log('Results:', processedResults);
-          console.log('=========================');
-          
           setResults(processedResults);
         } catch (err) {
-          console.error('=== SEARCH ERROR ===');
-          console.error('Error:', err);
-          console.error('Error Message:', err.message);
-          console.error('Error Stack:', err.stack);
-          console.error('====================');
           setError(err.response?.data?.error || err.message || 'Failed to search. Please try again.');
           setResults([]);
         } finally {
@@ -91,7 +82,7 @@ const SearchResults = () => {
         detectCountry();
       }
     }
-  }, [searchParams, selectedCountry]); // Include selectedCountry to fix dependency warning
+  }, [searchParams, selectedCountry, locale]); // Include locale to reload when language changes
 
   const handleSearch = (query) => {
     if (query.trim()) {

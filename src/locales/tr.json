@@ -31,6 +31,14 @@
     "MX": "Meksika",
     "IN": "Hindistan",
     "CN": "Çin"
+  },
+  "providerTypes": {
+    "sub": "Abonelik",
+    "rent": "Kirala",
+    "buy": "Satın Al",
+    "free": "Ücretsiz",
+    "ads": "Reklam Destekli",
+    "streaming": "Yayın"
   }
 }
 

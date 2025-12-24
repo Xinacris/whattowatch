@@ -6,7 +6,7 @@ import { getTitleDetails, getTitleSources } from '../services/tmdbApi';
 import styles from './TitleDetail.module.css';
 
 const TitleDetail = () => {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -32,23 +32,19 @@ const TitleDetail = () => {
         const typeFromUrl = searchParams.get('type');
         const titleType = typeFromUrl || 'movie';
         
-        // Fetch title details
-        const titleData = await getTitleDetails(id, titleType, countryToUse);
+        // Map locale to TMDB language code
+        const localeToLanguage = {
+          'en': 'en-US',
+          'tr': 'tr-TR',
+        };
+        const language = localeToLanguage[locale] || 'en-US';
         
-        console.log('=== TMDB TITLE DETAILS ===');
-        console.log('Title Data:', titleData);
-        console.log('Type:', titleType);
-        console.log('==========================');
-        
+        // Fetch title details with language preference
+        const titleData = await getTitleDetails(id, titleType, countryToUse, language);
         setTitle(titleData);
         
         // Fetch sources for the determined type
         const sourcesData = await getTitleSources(id, titleType, countryToUse);
-        
-        console.log('=== TMDB STREAMING SOURCES ===');
-        console.log('Country:', countryToUse);
-        console.log('Sources Data:', sourcesData);
-        console.log('==============================');
         
         // TMDB already filters by country, so we can use sources directly
         const filteredSources = Array.isArray(sourcesData) ? sourcesData : [];
@@ -69,7 +65,7 @@ const TitleDetail = () => {
     if (id) {
       fetchTitleData();
     }
-  }, [id, searchParams, selectedCountry]); // Include selectedCountry to fix dependency warning
+  }, [id, searchParams, selectedCountry, locale]); // Include locale to reload when language changes
 
   if (loading) {
     return (
@@ -163,7 +159,7 @@ const TitleDetail = () => {
                   <div className={styles.sourceInfo}>
                     <h3 className={styles.sourceName}>{source.name}</h3>
                     <span className={styles.sourceType}>
-                      {source.type === 'sub' ? 'Subscription' : source.type === 'rent' ? 'Rent' : 'Buy'}
+                      {t(`providerTypes.${source.type}`) || t('providerTypes.streaming')}
                     </span>
                   </div>
                 </div>
