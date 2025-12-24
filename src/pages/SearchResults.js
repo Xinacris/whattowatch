@@ -28,8 +28,8 @@ const SearchResults = () => {
     if (query) {
       setSearchQuery(query);
       
-      // Update selectedCountry from URL if present
-      if (urlCountry) {
+      // Update selectedCountry from URL if present (only if different to avoid infinite loop)
+      if (urlCountry && urlCountry !== selectedCountry) {
         setSelectedCountry(urlCountry);
       }
       
@@ -91,7 +91,7 @@ const SearchResults = () => {
         detectCountry();
       }
     }
-  }, [searchParams]); // Only depend on searchParams to avoid infinite loops
+  }, [searchParams, selectedCountry]); // Include selectedCountry to fix dependency warning
 
   const handleSearch = (query) => {
     if (query.trim()) {

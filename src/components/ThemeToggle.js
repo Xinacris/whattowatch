@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import styles from './ThemeToggle.module.css';
 
 const ThemeToggle = () => {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <button

@@ -25,7 +25,8 @@ const TitleDetail = () => {
       setError(null);
       
       try {
-        const countryToUse = searchParams.get('country') || selectedCountry;
+        const urlCountry = searchParams.get('country');
+        const countryToUse = urlCountry || selectedCountry;
         
         // Get type from URL params, default to 'movie'
         const typeFromUrl = searchParams.get('type');
@@ -53,7 +54,10 @@ const TitleDetail = () => {
         const filteredSources = Array.isArray(sourcesData) ? sourcesData : [];
         
         setSources(filteredSources);
-        setSelectedCountry(countryToUse);
+        // Update selectedCountry from URL if present (only if different to avoid infinite loop)
+        if (urlCountry && urlCountry !== selectedCountry) {
+          setSelectedCountry(urlCountry);
+        }
       } catch (err) {
         console.error('Error fetching title data:', err);
         setError(err.message || 'Failed to load title details.');
@@ -65,7 +69,7 @@ const TitleDetail = () => {
     if (id) {
       fetchTitleData();
     }
-  }, [id, searchParams]);
+  }, [id, searchParams, selectedCountry]); // Include selectedCountry to fix dependency warning
 
   if (loading) {
     return (
