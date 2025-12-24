@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../context/LocaleContext';
 import SearchContainer from '../components/SearchContainer';
 import { detectUserCountry, detectUserCountrySync } from '../utils/countryDetection';
-import styles from './Home.module.css';
 
 const Home = () => {
   const { t } = useLocale();
@@ -32,7 +31,7 @@ const Home = () => {
   };
 
   return (
-    <div className={styles.page}>
+    <div className="py-8">
       {/* Search Container */}
       <SearchContainer
         onSearch={handleSearch}
@@ -41,11 +40,11 @@ const Home = () => {
       />
 
       {/* Welcome Section */}
-      <div className={styles.welcomeSection}>
-        <h2 className={styles.welcomeTitle}>
+      <div className="mt-16 text-center">
+        <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-4">
           {t('home.welcomeTitle')}
         </h2>
-        <p className={styles.welcomeText}>
+        <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
           {t('home.welcomeText')}
         </p>
       </div>

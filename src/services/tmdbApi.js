@@ -2,6 +2,11 @@ const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const API_TOKEN = process.env.REACT_APP_TMDB_API_TOKEN; // Bearer token (optional, preferred)
 
+// Debug: Check if environment variables are loaded
+if (!API_KEY && !API_TOKEN) {
+  console.warn('⚠️ TMDB API credentials not found. Please check your .env file and restart the development server.');
+}
+
 /**
  * Build URL with query parameters
  * @param {string} endpoint - API endpoint
@@ -111,8 +116,13 @@ export const searchTitles = async (query, country = null, language = null) => {
 
     const json = await fetchFromTMDB('/search/multi', params);
     
+    // Filter out actors/people (only show movies and TV shows)
+    const filteredResults = (json.results || []).filter(item => 
+      item.media_type === 'movie' || item.media_type === 'tv'
+    );
+    
     // Transform TMDB results to match our expected format
-    const transformedResults = (json.results || []).map(item => ({
+    const transformedResults = filteredResults.map(item => ({
       id: item.id,
       tmdb_id: item.id,
       title: item.title || item.name,

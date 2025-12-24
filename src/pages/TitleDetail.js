@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLocale } from '../context/LocaleContext';
 import { detectUserCountrySync } from '../utils/countryDetection';
 import { getTitleDetails, getTitleSources } from '../services/tmdbApi';
-import styles from './TitleDetail.module.css';
+import '../styles/TitleDetail.scss';
 
 const TitleDetail = () => {
   const { t, locale } = useLocale();
@@ -69,10 +69,10 @@ const TitleDetail = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner}></div>
-          <p className={styles.loadingText}>{t('common.searching')}</p>
+      <div className="py-8">
+        <div className="text-center py-16">
+          <div className="spinner"></div>
+          <p className="mt-4 text-[var(--text-secondary)]">{t('common.searching')}</p>
         </div>
       </div>
     );
@@ -80,10 +80,13 @@ const TitleDetail = () => {
 
   if (error) {
     return (
-      <div className={styles.page}>
-        <div className={styles.errorContainer}>
-          <p>{error}</p>
-          <button onClick={() => navigate(-1)} className={styles.backButton}>
+      <div className="py-8">
+        <div className="text-center p-12 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+          <p className="text-[var(--text-primary)] mb-4">{error}</p>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="bg-transparent border-none text-[var(--accent-color)] text-base cursor-pointer px-4 py-2 mb-8 rounded-lg transition-all duration-200 font-medium hover:bg-[var(--bg-hover)]"
+          >
             Go Back
           </button>
         </div>
@@ -93,10 +96,13 @@ const TitleDetail = () => {
 
   if (!title) {
     return (
-      <div className={styles.page}>
-        <div className={styles.errorContainer}>
-          <p>Title not found</p>
-          <button onClick={() => navigate(-1)} className={styles.backButton}>
+      <div className="py-8">
+        <div className="text-center p-12 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+          <p className="text-[var(--text-primary)] mb-4">Title not found</p>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="bg-transparent border-none text-[var(--accent-color)] text-base cursor-pointer px-4 py-2 mb-8 rounded-lg transition-all duration-200 font-medium hover:bg-[var(--bg-hover)]"
+          >
             Go Back
           </button>
         </div>
@@ -110,55 +116,66 @@ const TitleDetail = () => {
   const imageUrl = title.poster || title.poster_url || `https://via.placeholder.com/500x750?text=${encodeURIComponent(displayTitle)}`;
 
   return (
-    <div className={styles.page}>
-      <button onClick={() => navigate(-1)} className={styles.backButton}>
+    <div className="py-8">
+      <button 
+        onClick={() => navigate(-1)} 
+        className="bg-transparent border-none text-[var(--accent-color)] text-base cursor-pointer px-4 py-2 mb-8 rounded-lg transition-all duration-200 font-medium hover:bg-[var(--bg-hover)]"
+      >
         ← Back
       </button>
 
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <div className={styles.posterContainer}>
-            <img src={imageUrl} alt={displayTitle} className={styles.poster} />
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex gap-8 mb-12 flex-wrap">
+          <div className="flex-shrink-0">
+            <img 
+              src={imageUrl} 
+              alt={displayTitle} 
+              className="w-[300px] max-w-full rounded-xl shadow-[var(--shadow-lg)] border border-[var(--border-color)] poster" 
+            />
           </div>
           
-          <div className={styles.info}>
-            <h1 className={styles.title}>{displayTitle}</h1>
-            <div className={styles.meta}>
-              {title.year && <span className={styles.year}>{title.year}</span>}
+          <div className="flex-1 min-w-[300px]">
+            <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-4 md:text-5xl">{displayTitle}</h1>
+            <div className="flex gap-4 flex-wrap mb-6">
+              {title.year && (
+                <span className="px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--border-color)]">
+                  {title.year}
+                </span>
+              )}
               {type && (
-                <span className={styles.type}>
+                <span className="px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--border-color)]">
                   {type === 'movie' ? '🎬 Movie' : '📺 TV Series'}
                 </span>
               )}
               {rating && (
-                <span className={styles.rating}>
+                <span className="px-4 py-2 bg-[rgba(251,191,36,0.1)] rounded-lg text-sm text-[#fbbf24] border border-[rgba(251,191,36,0.3)]">
                   ⭐ {rating}
                 </span>
               )}
             </div>
             {title.plot_overview && (
-              <p className={styles.overview}>{title.plot_overview}</p>
+              <p className="text-lg leading-relaxed text-[var(--text-secondary)] max-w-3xl">{title.plot_overview}</p>
             )}
           </div>
         </div>
 
         {/* Streaming Sources */}
         {sources.length > 0 && (
-          <div className={styles.sourcesSection}>
-            <h2 className={styles.sectionTitle}>Available on</h2>
-            <div className={styles.sourcesGrid}>
+          <div className="mt-12">
+            <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-6">Available on</h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 sourcesGrid">
               {sources.map((source) => (
-                <div key={source.id} className={styles.sourceCard}>
+                <div key={source.id} className="sourceCard flex flex-col items-center p-6 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl text-center">
                   {source.logo_100px && (
                     <img
                       src={source.logo_100px}
                       alt={source.name}
-                      className={styles.sourceLogo}
+                      className="w-[100px] h-[100px] object-contain mb-4 rounded-lg"
                     />
                   )}
-                  <div className={styles.sourceInfo}>
-                    <h3 className={styles.sourceName}>{source.name}</h3>
-                    <span className={styles.sourceType}>
+                  <div className="w-full">
+                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-2">{source.name}</h3>
+                    <span className="text-sm text-[var(--text-secondary)] capitalize">
                       {t(`providerTypes.${source.type}`) || t('providerTypes.streaming')}
                     </span>
                   </div>
@@ -169,7 +186,7 @@ const TitleDetail = () => {
         )}
 
         {sources.length === 0 && (
-          <div className={styles.noSources}>
+          <div className="text-center p-12 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)]">
             <p>No streaming sources available for this title in {selectedCountry}.</p>
           </div>
         )}

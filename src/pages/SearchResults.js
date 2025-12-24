@@ -5,7 +5,7 @@ import SearchContainer from '../components/SearchContainer';
 import MovieCard from '../components/MovieCard';
 import { detectUserCountry, detectUserCountrySync } from '../utils/countryDetection';
 import { searchTitles } from '../services/tmdbApi';
-import styles from './SearchResults.module.css';
+import '../styles/SearchResults.scss';
 
 const SearchResults = () => {
   const { t, locale } = useLocale();
@@ -98,9 +98,9 @@ const SearchResults = () => {
   };
 
   return (
-    <div className={styles.page}>
+    <div className="py-8">
       {/* Search Container */}
-      <div className={styles.searchContainerWrapper}>
+      <div className="mb-8">
         <SearchContainer
           onSearch={handleSearch}
           onCountryChange={handleCountryChange}
@@ -109,33 +109,33 @@ const SearchResults = () => {
       </div>
 
       {/* Search Results */}
-      <div className={styles.resultsSection}>
+      <div className="mt-8">
         {loading && (
-          <div className={styles.loadingContainer}>
-            <div className={styles.spinner}></div>
-            <p className={styles.loadingText}>{t('common.searching')}</p>
+          <div className="text-center py-12">
+            <div className="spinner"></div>
+            <p className="mt-4 text-[var(--text-secondary)]">{t('common.searching')}</p>
           </div>
         )}
 
         {error && (
-          <div className={styles.errorContainer}>
+          <div className="errorContainer bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] px-4 py-3 rounded-lg">
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && searchQuery && (
           <div>
-            <h2 className={styles.resultsHeader}>
+            <h2 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">
               {t('common.searchResultsFor')} "{searchQuery}"
             </h2>
             {results.length === 0 ? (
-              <div className={styles.noResultsContainer}>
-                <p className={styles.noResultsText}>
+              <div className="text-center py-12 bg-[var(--bg-primary)] rounded-lg shadow-[var(--shadow)] border border-[var(--border-color)]">
+                <p className="text-[var(--text-secondary)]">
                   {t('common.noResults')}
                 </p>
               </div>
             ) : (
-              <div className={styles.resultsGrid}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {results.map((title) => (
                   <MovieCard 
                     key={title.id || title.tmdb_id} 
@@ -149,8 +149,8 @@ const SearchResults = () => {
         )}
 
         {!searchQuery && (
-          <div className={styles.emptyStateContainer}>
-            <p className={styles.emptyStateText}>
+          <div className="text-center py-12 bg-[var(--bg-primary)] rounded-lg shadow-[var(--shadow)] border border-[var(--border-color)]">
+            <p className="text-[var(--text-secondary)]">
               {t('common.enterSearchTerm')}
             </p>
           </div>
