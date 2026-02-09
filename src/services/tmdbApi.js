@@ -15,14 +15,14 @@ if (!API_KEY && !API_TOKEN) {
  */
 const buildUrl = (endpoint, params = {}) => {
   const url = new URL(`${API_BASE_URL}${endpoint}`);
-  
+
   // Add additional parameters
   Object.keys(params).forEach(key => {
     if (params[key] !== null && params[key] !== undefined) {
       url.searchParams.append(key, params[key]);
     }
   });
-  
+
   return url.toString();
 };
 
@@ -42,7 +42,7 @@ const getFetchOptions = () => {
   if (API_TOKEN) {
     options.headers['Authorization'] = `Bearer ${API_TOKEN}`;
   }
-  
+
   return options;
 };
 
@@ -55,7 +55,7 @@ const getFetchOptions = () => {
 const fetchFromTMDB = async (endpoint, params = {}) => {
   const url = buildUrl(endpoint, params);
   const options = getFetchOptions();
-  
+
   // If using API key (not token), add it to URL
   let finalUrl = url;
   if (!API_TOKEN && API_KEY) {
@@ -63,13 +63,13 @@ const fetchFromTMDB = async (endpoint, params = {}) => {
     urlWithKey.searchParams.append('api_key', API_KEY);
     finalUrl = urlWithKey.toString();
   }
-  
+
   const response = await fetch(finalUrl, options);
-  
+
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
-  
+
   return response.json();
 };
 
@@ -115,12 +115,12 @@ export const searchTitles = async (query, country = null, language = null) => {
     }
 
     const json = await fetchFromTMDB('/search/multi', params);
-    
+
     // Filter out actors/people (only show movies and TV shows)
-    const filteredResults = (json.results || []).filter(item => 
+    const filteredResults = (json.results || []).filter(item =>
       item.media_type === 'movie' || item.media_type === 'tv'
     );
-    
+
     // Transform TMDB results to match our expected format
     const transformedResults = filteredResults.map(item => ({
       id: item.id,
@@ -137,7 +137,7 @@ export const searchTitles = async (query, country = null, language = null) => {
       release_date: item.release_date || item.first_air_date,
       backdrop_path: item.backdrop_path,
     }));
-    
+
     return {
       title_results: transformedResults,
       people_results: [],
@@ -159,7 +159,7 @@ export const searchTitles = async (query, country = null, language = null) => {
 export const getTitleDetails = async (titleId, type = 'movie', country = null, language = null) => {
   try {
     const params = {};
-    
+
     // Use provided language, or fallback to country-based language mapping
     if (language) {
       params.language = language;
@@ -177,15 +177,15 @@ export const getTitleDetails = async (titleId, type = 'movie', country = null, l
 
     const endpoint = type === 'movie' ? `/movie/${titleId}` : `/tv/${titleId}`;
     const json = await fetchFromTMDB(endpoint, params);
-    
+
     // Transform TMDB response to match our expected format
     return {
       id: json.id,
       tmdb_id: json.id,
       title: json.title || json.name,
       name: json.name || json.title,
-      year: json.release_date ? new Date(json.release_date).getFullYear() : 
-            json.first_air_date ? new Date(json.first_air_date).getFullYear() : null,
+      year: json.release_date ? new Date(json.release_date).getFullYear() :
+        json.first_air_date ? new Date(json.first_air_date).getFullYear() : null,
       imdb_rating: json.vote_average || null,
       tmdb_type: type,
       type: type === 'movie' ? 'movie' : 'tv_series',
@@ -217,19 +217,19 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
       throw new Error('Country code is required for watch providers');
     }
 
-    const endpoint = type === 'movie' 
+    const endpoint = type === 'movie'
       ? `/movie/${titleId}/watch/providers`
       : `/tv/${titleId}/watch/providers`;
-    
+
     const json = await fetchFromTMDB(endpoint);
-    
+
     // TMDB returns watch providers by country
     // Response format: { id: number, results: { [countryCode]: { link, flatrate, buy, rent, free, ads } } }
     const countryProviders = json.results?.[country.toUpperCase()] || json.results?.[country.toLowerCase()] || {};
-    
+
     // Combine all provider types (flatrate, rent, buy, free, ads)
     const allProviders = [];
-    
+
     // Subscription services (flatrate)
     if (countryProviders.flatrate) {
       countryProviders.flatrate.forEach(provider => {
@@ -239,7 +239,7 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
         });
       });
     }
-    
+
     // Free services
     if (countryProviders.free) {
       countryProviders.free.forEach(provider => {
@@ -249,7 +249,7 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
         });
       });
     }
-    
+
     // Rent services
     if (countryProviders.rent) {
       countryProviders.rent.forEach(provider => {
@@ -259,7 +259,7 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
         });
       });
     }
-    
+
     // Buy services
     if (countryProviders.buy) {
       countryProviders.buy.forEach(provider => {
@@ -269,7 +269,7 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
         });
       });
     }
-    
+
     // Ad-supported services
     if (countryProviders.ads) {
       countryProviders.ads.forEach(provider => {
@@ -279,14 +279,14 @@ export const getTitleSources = async (titleId, type = 'movie', country) => {
         });
       });
     }
-    
+
     // Map providers with logo URLs
     return allProviders.map(provider => ({
       id: provider.provider_id,
       name: provider.provider_name,
       type: provider.type,
-      logo_100px: provider.logo_path 
-        ? `https://image.tmdb.org/t/p/w500${provider.logo_path}` 
+      logo_100px: provider.logo_path
+        ? `https://image.tmdb.org/t/p/w500${provider.logo_path}`
         : null,
       logo_path: provider.logo_path,
       display_priority: provider.display_priority,
@@ -319,22 +319,22 @@ export const getPopularTitles = async (type = 'movie', country = null) => {
 
     const endpoint = type === 'movie' ? '/movie/popular' : '/tv/popular';
     const json = await fetchFromTMDB(endpoint, params);
-    
+
     // Transform results
     const transformedResults = (json.results || []).map(item => ({
       id: item.id,
       tmdb_id: item.id,
       title: item.title || item.name,
       name: item.name || item.title,
-      year: item.release_date ? new Date(item.release_date).getFullYear() : 
-            item.first_air_date ? new Date(item.first_air_date).getFullYear() : null,
+      year: item.release_date ? new Date(item.release_date).getFullYear() :
+        item.first_air_date ? new Date(item.first_air_date).getFullYear() : null,
       imdb_rating: item.vote_average || null,
       tmdb_type: type,
       type: type === 'movie' ? 'movie' : 'tv_series',
       poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
       plot_overview: item.overview || null,
     }));
-    
+
     return {
       title_results: transformedResults,
     };
@@ -344,3 +344,69 @@ export const getPopularTitles = async (type = 'movie', country = null) => {
   }
 };
 
+
+/**
+ * Search for collections
+ * @param {string} query - Search query
+ * @param {string} language - Language code
+ * @returns {Promise} - Collection results
+ */
+export const searchCollections = async (query, language = 'en-US') => {
+  try {
+    const params = {
+      query: query,
+      language: language,
+    };
+
+    const json = await fetchFromTMDB('/search/collection', params);
+
+    return (json.results || []).map(item => ({
+      id: item.id,
+      tmdb_id: item.id,
+      title: item.name,
+      name: item.name,
+      poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+      backdrop_path: item.backdrop_path,
+      type: 'collection',
+      overview: item.overview,
+    }));
+  } catch (error) {
+    console.error('Error searching collections:', error);
+    return [];
+  }
+};
+
+/**
+ * Get collection details
+ * @param {number} collectionId - Collection ID
+ * @param {string} language - Language code
+ * @returns {Promise} - Collection details with parts
+ */
+export const getCollectionDetails = async (collectionId, language = 'en-US') => {
+  try {
+    const params = { language };
+    const json = await fetchFromTMDB(`/collection/${collectionId}`, params);
+
+    return {
+      id: json.id,
+      name: json.name,
+      overview: json.overview,
+      poster_path: json.poster_path,
+      poster: json.poster_path ? `https://image.tmdb.org/t/p/w500${json.poster_path}` : null,
+      backdrop_path: json.backdrop_path,
+      parts: (json.parts || []).map(part => ({
+        id: part.id,
+        title: part.title,
+        overview: part.overview,
+        poster_path: part.poster_path,
+        poster: part.poster_path ? `https://image.tmdb.org/t/p/w500${part.poster_path}` : null,
+        release_date: part.release_date,
+        vote_average: part.vote_average,
+        type: 'movie'
+      })).sort((a, b) => new Date(a.release_date) - new Date(b.release_date)) // Sort by release date
+    };
+  } catch (error) {
+    console.error('Error fetching collection details:', error);
+    throw error;
+  }
+};

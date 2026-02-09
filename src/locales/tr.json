@@ -7,7 +7,12 @@
     "enterSearchTerm": "Film ve dizileri bulmak için bir arama terimi girin.",
     "searchResultsFor": "Arama Sonuçları",
     "movie": "Film",
-    "tvSeries": "Dizi"
+    "tvSeries": "Dizi",
+    "back": "Geri",
+    "collection": "Film Serisi"
+  },
+  "collection": {
+    "parts": "Serideki Filmler"
   },
   "layout": {
     "title": "WhatToWatch",
@@ -47,4 +52,3 @@
     "noSources": "Bu başlık için bu ülkede yayın kaynağı bulunamadı."
   }
 }
-

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../context/LocaleContext';
-import { searchTitles } from '../services/tmdbApi';
+import { searchTitles, searchCollections } from '../services/tmdbApi';
 import styles from './SearchContainer.module.css';
 
 const getTranslationOrFallback = (tFunc, key, fallback) => {
@@ -10,6 +11,7 @@ const getTranslationOrFallback = (tFunc, key, fallback) => {
 
 const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -61,6 +63,12 @@ const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
   };
 
   const handleSuggestionClick = (item) => {
+    if (item.type === 'collection') {
+      navigate(`/collection/${item.id}`);
+      setShowSuggestions(false);
+      return;
+    }
+
     const title = item.suggestionTitle || item.title || item.name || '';
     setSearchQuery(title);
     setShowSuggestions(false);
@@ -82,47 +90,40 @@ const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
     const timeoutId = setTimeout(async () => {
       try {
         setIsLoadingSuggestions(true);
-        const result = await searchTitles(query, selectedCountry);
-        const rawItems = (result?.title_results || []).slice(0, 30);
 
-        // Grup mantığı: aynı seriye ait olabilecek filmleri tek başlık altında toparla.
-        // Basit bir heuristic: başlığın ilk kelimelerine göre grupla.
-        const groups = new Map();
+        // Search for both collections and individual titles
+        const [collectionResults, titleResult] = await Promise.all([
+          searchCollections(query, 'en-US'), // Collections often work better with English queries or mixed
+          searchTitles(query, selectedCountry)
+        ]);
 
-        rawItems.forEach((item) => {
-          const fullTitle = (item.title || item.name || '').trim();
-          if (!fullTitle) return;
+        const rawTitles = (titleResult?.title_results || []).slice(0, 30);
 
-          const words = fullTitle.split(/\s+/);
-          // En az 3 kelime varsa ilk 3 kelimeyi al (örn: "The Lord of the", "Harry Potter and")
-          // Daha azsa elde olanı kullan
-          const baseWords = words.length >= 3 ? words.slice(0, 3) : words.slice(0, 2);
-          const base = baseWords.join(' ');
-          const key = `${base.toLowerCase()}|${item.type}`;
+        // Filter titles if they likely belong to a found collection
+        let filteredTitles = rawTitles;
+        const collectionNames = collectionResults.map(c => c.name.toLowerCase().replace(' collection', '').replace(' serisi', '').trim());
 
-          if (!groups.has(key)) {
-            groups.set(key, {
-              ...item,
-              suggestionTitle: base,
-              _count: 0,
-            });
-          }
+        if (collectionNames.length > 0) {
+          filteredTitles = rawTitles.filter(item => {
+            const titleLower = (item.title || item.name || '').toLowerCase();
+            // If the title contains a collection name (e.g. "Harry Potter"), and it's a movie, check if we should hide it
+            // We only hide if we have a matching collection.
+            const belongsToCollection = collectionNames.some(cName => titleLower.includes(cName));
+            // Show if it does NOT belong to a collection, OR if it's not a movie/tv (unlikely), 
+            // OR if the user query is very specific (e.g. full title), but here we are showing suggestions.
+            // Let's go with the user's request: "Harry Potter" should showing the collection, not the movies.
+            return !belongsToCollection;
+          });
+        }
 
-          const group = groups.get(key);
-          group._count += 1;
-        });
+        // Combine results: Collections first, then titles
+        // Limit total to 8-10 items
+        const combined = [
+          ...collectionResults.slice(0, 2), // Top 2 collections
+          ...filteredTitles
+        ].slice(0, 10);
 
-        // Eğer grupta sadece 1 film varsa orijinal başlığı kullan, 1'den fazlaysa seri adını göster.
-        const groupedItems = Array.from(groups.values()).map((item) => ({
-          ...item,
-          suggestionTitle:
-            item._count > 1
-              ? item.suggestionTitle
-              : (item.title || item.name || item.suggestionTitle),
-        }));
-
-        const items = groupedItems.slice(0, 8);
-        setSuggestions(items);
+        setSuggestions(combined);
         setShowSuggestions(true);
       } catch (error) {
         console.error('Error fetching autocomplete suggestions:', error);
@@ -175,9 +176,8 @@ const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
                             key={country.code}
                             type="button"
                             onClick={() => handleCountrySelect(country.code)}
-                            className={`${styles.countryItem} ${
-                              selectedCountry === country.code ? styles.countryItemSelected : ''
-                            }`}
+                            className={`${styles.countryItem} ${selectedCountry === country.code ? styles.countryItemSelected : ''
+                              }`}
                           >
                             <span className={styles.countryItemName}>{countryName}</span>
                             {selectedCountry === country.code && (
@@ -230,10 +230,23 @@ const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
                     )}
 
                     {!isLoadingSuggestions && suggestions.map((item) => {
-                      const isMovie = item.type === 'movie';
-                      const typeLabel = isMovie
-                        ? getTranslationOrFallback(t, 'common.movie', 'Film')
-                        : getTranslationOrFallback(t, 'common.tvSeries', 'Dizi');
+                      let typeLabel;
+                      if (item.type === 'collection') {
+                        typeLabel = t('common.collection') || 'Series';
+                      } else {
+                        const isMovie = item.type === 'movie';
+                        typeLabel = isMovie
+                          ? getTranslationOrFallback(t, 'common.movie', 'Film')
+                          : getTranslationOrFallback(t, 'common.tvSeries', 'Dizi');
+                      }
+
+                      const cleanTitle = (title) => {
+                        return title.replace(/ Collection$/i, '').replace(/ Serisi$/i, '').replace(/ Koleksiyonu$/i, '');
+                      };
+
+                      const displayTitle = item.type === 'collection'
+                        ? cleanTitle(item.suggestionTitle || item.title || item.name)
+                        : (item.suggestionTitle || item.title || item.name);
 
                       return (
                         <button
@@ -243,11 +256,14 @@ const SearchContainer = ({ onSearch, onCountryChange, selectedCountry }) => {
                           onClick={() => handleSuggestionClick(item)}
                         >
                           <span className={styles.suggestionTitle}>
-                            {item.suggestionTitle || item.title || item.name}
+                            {displayTitle}
                           </span>
-                          <span className={styles.suggestionMeta}>
-                            {item.year ? `${item.year} - ${typeLabel}` : typeLabel}
-                          </span>
+                          {/* Only show meta if it's NOT a collection, or if collection has a year (unlikely) */}
+                          {item.type !== 'collection' && (
+                            <span className={styles.suggestionMeta}>
+                              {item.year ? `${item.year} - ${typeLabel}` : typeLabel}
+                            </span>
+                          )}
                         </button>
                       );
                     })}

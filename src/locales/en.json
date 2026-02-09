@@ -7,7 +7,12 @@
     "enterSearchTerm": "Enter a search term to find movies and TV shows.",
     "searchResultsFor": "Search Results for",
     "movie": "Movie",
-    "tvSeries": "TV Series"
+    "tvSeries": "TV Series",
+    "back": "Back",
+    "collection": "Film Series"
+  },
+  "collection": {
+    "parts": "Movies in this Collection"
   },
   "layout": {
     "title": "WhatToWatch",
@@ -47,4 +52,3 @@
     "noSources": "No streaming sources available for this title in this country."
   }
 }
-
