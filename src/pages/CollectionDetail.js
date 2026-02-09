@@ -44,7 +44,7 @@ const CollectionDetail = () => {
         return (
             <div className="py-8">
                 <div className="text-center py-16">
-                    <div className="spinner"></div> // Assuming spinner class exists globally or from TitleDetail
+                    <div className="spinner"></div>
                     <p className="mt-4 text-[var(--text-secondary)]">{t('common.loading') || 'Loading...'}</p>
                 </div>
             </div>
