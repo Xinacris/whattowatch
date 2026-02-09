@@ -14,6 +14,7 @@
   gap: 1rem;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
+  width: 100%;
 }
 
 .content {
@@ -151,6 +152,20 @@
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  width: 100%;
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  flex: 1;
+}
+
+.inputWrapper {
+  position: relative;
+  flex: 1;
 }
 
 .input {
@@ -163,6 +178,7 @@
   color: var(--text-primary);
   transition: all 0.2s;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .input:focus {
@@ -196,4 +212,67 @@
 
 .searchButton:active {
   transform: scale(0.98);
+}
+
+/* Mobile layout adjustments */
+@media (max-width: 640px) {
+  .searchForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchButton {
+    width: 100%;
+  }
+}
+
+/* Autocomplete suggestions */
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  max-height: 16rem;
+  overflow-y: auto;
+  z-index: 30;
+}
+
+.suggestionsStatus {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.suggestionItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s;
+  color: var(--text-primary);
+}
+
+.suggestionItem:hover {
+  background-color: var(--bg-hover);
+}
+
+.suggestionTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.suggestionMeta {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 0.15rem;
 }

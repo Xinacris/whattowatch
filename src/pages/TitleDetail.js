@@ -144,7 +144,7 @@ const TitleDetail = () => {
               )}
               {type && (
                 <span className="px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--border-color)]">
-                  {type === 'movie' ? '🎬 Movie' : '📺 TV Series'}
+                  {type === 'movie' ? `🎬 ${t('common.movie')}` : `📺 ${t('common.tvSeries')}`}
                 </span>
               )}
               {rating && (
@@ -162,7 +162,9 @@ const TitleDetail = () => {
         {/* Streaming Sources */}
         {sources.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-6">Available on</h2>
+            <h2 className="text-3xl font-semibold text-[var(--text-primary)] mb-6">
+              {t('titleDetail.availableOn')}
+            </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 sourcesGrid">
               {sources.map((source) => (
                 <div key={source.id} className="sourceCard flex flex-col items-center p-6 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl text-center">
@@ -187,7 +189,7 @@ const TitleDetail = () => {
 
         {sources.length === 0 && (
           <div className="text-center p-12 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)]">
-            <p>No streaming sources available for this title in {selectedCountry}.</p>
+            <p>{t('titleDetail.noSources')}</p>
           </div>
         )}
       </div>

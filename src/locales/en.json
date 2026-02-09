@@ -5,7 +5,9 @@
     "searching": "Searching...",
     "noResults": "No results found. Try a different search term.",
     "enterSearchTerm": "Enter a search term to find movies and TV shows.",
-    "searchResultsFor": "Search Results for"
+    "searchResultsFor": "Search Results for",
+    "movie": "Movie",
+    "tvSeries": "TV Series"
   },
   "layout": {
     "title": "WhatToWatch",
@@ -39,6 +41,10 @@
     "free": "Free",
     "ads": "Ad-supported",
     "streaming": "Streaming"
+  },
+  "titleDetail": {
+    "availableOn": "Available on",
+    "noSources": "No streaming sources available for this title in this country."
   }
 }
 

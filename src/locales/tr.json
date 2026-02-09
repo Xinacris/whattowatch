@@ -5,7 +5,9 @@
     "searching": "Aranıyor...",
     "noResults": "Sonuç bulunamadı. Farklı bir arama terimi deneyin.",
     "enterSearchTerm": "Film ve dizileri bulmak için bir arama terimi girin.",
-    "searchResultsFor": "Arama Sonuçları"
+    "searchResultsFor": "Arama Sonuçları",
+    "movie": "Film",
+    "tvSeries": "Dizi"
   },
   "layout": {
     "title": "WhatToWatch",
@@ -39,6 +41,10 @@
     "free": "Ücretsiz",
     "ads": "Reklam Destekli",
     "streaming": "Yayın"
+  },
+  "titleDetail": {
+    "availableOn": "Şuradan izleyebilirsin",
+    "noSources": "Bu başlık için bu ülkede yayın kaynağı bulunamadı."
   }
 }
 
