@@ -3,24 +3,30 @@
     "search": "Search",
     "searchPlaceholder": "Search for movies or TV shows...",
     "searching": "Searching...",
+    "loading": "Loading...",
     "noResults": "No results found. Try a different search term.",
     "enterSearchTerm": "Enter a search term to find movies and TV shows.",
     "searchResultsFor": "Search Results for",
     "movie": "Movie",
     "tvSeries": "TV Series",
     "back": "Back",
-    "collection": "Film Series"
+    "collection": "Film Series",
+    "filterAll": "All",
+    "filterMovies": "Movies",
+    "filterTV": "TV Shows"
   },
   "collection": {
     "parts": "Movies in this Collection"
   },
   "layout": {
-    "title": "WhatToWatch",
-    "subtitle": "Discover your next favorite movie or TV show"
+    "title": "Xinny's WhereToWatch",
+    "subtitle": "Discover where to watch your favorite movies & shows"
   },
   "home": {
-    "welcomeTitle": "Welcome to WhatToWatch",
-    "welcomeText": "Search for movies and TV shows, filter by country, and discover where to watch them. Start by typing a title in the search box above."
+    "welcomeTitle": "Welcome to Xinny's WhereToWatch",
+    "welcomeText": "Search for movies and TV shows, filter by country, and discover where to watch them. Start by typing a title in the search box above.",
+    "trendingMovies": "Trending Movies",
+    "trendingTV": "Trending TV Shows"
   },
   "countries": {
     "US": "United States",
@@ -49,6 +55,9 @@
   },
   "titleDetail": {
     "availableOn": "Available on",
-    "noSources": "No streaming sources available for this title in this country."
+    "noSources": "No streaming sources available for this title in this country.",
+    "cast": "Cast",
+    "watchTrailer": "Watch Trailer",
+    "closeTrailer": "Close"
   }
 }

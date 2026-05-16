@@ -346,6 +346,83 @@ export const getPopularTitles = async (type = 'movie', country = null) => {
 
 
 /**
+ * Get trending titles (movies and TV shows)
+ * @param {string} timeWindow - 'day' or 'week'
+ * @param {string} language - Language code
+ * @returns {Promise} - Trending titles
+ */
+export const getTrendingTitles = async (timeWindow = 'week', language = 'en-US') => {
+  try {
+    const json = await fetchFromTMDB(`/trending/all/${timeWindow}`, { language });
+    const transformedResults = (json.results || [])
+      .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+      .map(item => ({
+        id: item.id,
+        tmdb_id: item.id,
+        title: item.title || item.name,
+        name: item.name || item.title,
+        year: item.release_date ? new Date(item.release_date).getFullYear() :
+          item.first_air_date ? new Date(item.first_air_date).getFullYear() : null,
+        imdb_rating: item.vote_average || null,
+        tmdb_type: item.media_type === 'movie' ? 'movie' : 'tv',
+        type: item.media_type === 'movie' ? 'movie' : 'tv_series',
+        poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        plot_overview: item.overview || null,
+        backdrop_path: item.backdrop_path,
+      }));
+    return { title_results: transformedResults };
+  } catch (error) {
+    console.error('Error fetching trending titles:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get cast for a title
+ * @param {number} titleId - Title ID
+ * @param {string} type - 'movie' or 'tv'
+ * @param {string} language - Language code
+ * @returns {Promise} - Cast array
+ */
+export const getTitleCredits = async (titleId, type = 'movie', language = 'en-US') => {
+  try {
+    const endpoint = type === 'movie' ? `/movie/${titleId}/credits` : `/tv/${titleId}/credits`;
+    const json = await fetchFromTMDB(endpoint, { language });
+    return (json.cast || []).slice(0, 12).map(person => ({
+      id: person.id,
+      name: person.name,
+      character: person.character,
+      profile_path: person.profile_path
+        ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+        : null,
+    }));
+  } catch (error) {
+    console.error('Error fetching credits:', error);
+    return [];
+  }
+};
+
+/**
+ * Get YouTube trailer key for a title
+ * @param {number} titleId - Title ID
+ * @param {string} type - 'movie' or 'tv'
+ * @returns {Promise<string|null>} - YouTube video key or null
+ */
+export const getTitleVideos = async (titleId, type = 'movie') => {
+  try {
+    const endpoint = type === 'movie' ? `/movie/${titleId}/videos` : `/tv/${titleId}/videos`;
+    const json = await fetchFromTMDB(endpoint);
+    const trailer = (json.results || []).find(
+      v => v.type === 'Trailer' && v.site === 'YouTube'
+    ) || (json.results || []).find(v => v.site === 'YouTube');
+    return trailer ? trailer.key : null;
+  } catch (error) {
+    console.error('Error fetching videos:', error);
+    return null;
+  }
+};
+
+/**
  * Search for collections
  * @param {string} query - Search query
  * @param {string} language - Language code

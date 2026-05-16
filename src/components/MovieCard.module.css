@@ -112,3 +112,29 @@
   flex: 1;
 }
 
+.overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 65%, transparent 100%);
+  padding: 1.5rem 0.85rem 0.85rem;
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+}
+
+.card:hover .overlay {
+  transform: translateY(0);
+}
+
+.overlayText {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+}
+

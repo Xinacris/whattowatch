@@ -41,6 +41,11 @@ const MovieCard = ({ title, selectedCountry }) => {
         <div className={styles.typeBadge}>
           {type === 'movie' ? '🎬' : '📺'}
         </div>
+        {plot_overview && (
+          <div className={styles.overlay}>
+            <p className={styles.overlayText}>{plot_overview}</p>
+          </div>
+        )}
       </div>
       <div className={styles.content}>
         <h3 className={styles.title}>{displayTitle}</h3>

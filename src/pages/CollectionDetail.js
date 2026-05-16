@@ -40,6 +40,13 @@ const CollectionDetail = () => {
         }
     }, [id, locale]);
 
+    useEffect(() => {
+        if (collection) {
+            document.title = `${collection.name} · Xinny's WhereToWatch`;
+        }
+        return () => { document.title = "Xinny's WhereToWatch"; };
+    }, [collection]);
+
     if (loading) {
         return (
             <div className="py-8">

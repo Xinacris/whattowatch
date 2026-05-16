@@ -3,24 +3,30 @@
     "search": "Ara",
     "searchPlaceholder": "Film veya dizi ara...",
     "searching": "Aranıyor...",
+    "loading": "Yükleniyor...",
     "noResults": "Sonuç bulunamadı. Farklı bir arama terimi deneyin.",
     "enterSearchTerm": "Film ve dizileri bulmak için bir arama terimi girin.",
     "searchResultsFor": "Arama Sonuçları",
     "movie": "Film",
     "tvSeries": "Dizi",
     "back": "Geri",
-    "collection": "Film Serisi"
+    "collection": "Film Serisi",
+    "filterAll": "Tümü",
+    "filterMovies": "Filmler",
+    "filterTV": "Diziler"
   },
   "collection": {
     "parts": "Serideki Filmler"
   },
   "layout": {
-    "title": "WhatToWatch",
-    "subtitle": "Bir sonraki favori filmini veya dizini keşfet"
+    "title": "Xinny's WhereToWatch",
+    "subtitle": "Favori filmlerini ve dizilerini nerede izleyeceğini keşfet"
   },
   "home": {
-    "welcomeTitle": "WhatToWatch'a Hoş Geldiniz",
-    "welcomeText": "Film ve dizileri ara, ülkeye göre filtrele ve nerede izleyebileceğini keşfet. Yukarıdaki arama kutusuna bir başlık yazarak başla."
+    "welcomeTitle": "Xinny's WhereToWatch'a Hoş Geldiniz",
+    "welcomeText": "Film ve dizileri ara, ülkeye göre filtrele ve nerede izleyebileceğini keşfet. Yukarıdaki arama kutusuna bir başlık yazarak başla.",
+    "trendingMovies": "Trend Filmler",
+    "trendingTV": "Trend Diziler"
   },
   "countries": {
     "US": "Amerika Birleşik Devletleri",
@@ -49,6 +55,9 @@
   },
   "titleDetail": {
     "availableOn": "Şuradan izleyebilirsin",
-    "noSources": "Bu başlık için bu ülkede yayın kaynağı bulunamadı."
+    "noSources": "Bu başlık için bu ülkede yayın kaynağı bulunamadı.",
+    "cast": "Oyuncular",
+    "watchTrailer": "Fragmanı İzle",
+    "closeTrailer": "Kapat"
   }
 }

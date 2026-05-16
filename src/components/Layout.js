@@ -11,10 +11,8 @@ const Layout = ({ children }) => {
   return (
     <div className={styles.layout}>
       <div className={styles.container}>
-        {/* Header */}
         <header className={styles.header}>
           <div className={styles.headerTop}>
-            <div></div>
             <div className={styles.headerControls}>
               <LocaleToggle />
               <ThemeToggle />
@@ -22,19 +20,29 @@ const Layout = ({ children }) => {
           </div>
           <Link to="/" className={styles.logoLink}>
             <h1 className={styles.title}>
-              🎬 {t('layout.title')}
+              🎬 <span className={styles.titleText}>{t('layout.title')}</span>
             </h1>
           </Link>
-          <p className={styles.subtitle}>
-            {t('layout.subtitle')}
-          </p>
+          <p className={styles.subtitle}>{t('layout.subtitle')}</p>
         </header>
 
-        {/* Main Content */}
         <main className={styles.main}>
           {children}
         </main>
       </div>
+
+      <footer className={styles.footer}>
+        Data provided by{' '}
+        <a
+          href="https://www.themoviedb.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.footerLink}
+        >
+          TMDB
+        </a>
+        {' '}· Xinny&apos;s WhereToWatch
+      </footer>
     </div>
   );
 };

@@ -2,12 +2,15 @@
   min-height: 100vh;
   background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end));
   transition: background 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  flex: 1;
 }
 
 .header {
@@ -31,25 +34,55 @@
 
 .logoLink {
   display: inline-block;
+  text-decoration: none;
 }
 
 .title {
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
-  transition: color 0.2s;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.5px;
 }
 
-.title:hover {
-  color: var(--accent-color);
+.titleText {
+  background: linear-gradient(135deg, #818cf8 0%, #60a5fa 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: opacity 0.2s;
+}
+
+.logoLink:hover .titleText {
+  opacity: 0.8;
 }
 
 .subtitle {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
 }
 
 .main {
-  /* Main content styles */
+  /* Main content */
+}
+
+.footer {
+  text-align: center;
+  padding: 1.75rem 1rem 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+.footerLink {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.footerLink:hover {
+  opacity: 0.75;
+  text-decoration: underline;
 }
