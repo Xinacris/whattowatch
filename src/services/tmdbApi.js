@@ -116,13 +116,11 @@ export const searchTitles = async (query, country = null, language = null) => {
 
     const json = await fetchFromTMDB('/search/multi', params);
 
-    // Filter out actors/people (only show movies and TV shows)
-    const filteredResults = (json.results || []).filter(item =>
+    const titleResults = (json.results || []).filter(item =>
       item.media_type === 'movie' || item.media_type === 'tv'
     );
 
-    // Transform TMDB results to match our expected format
-    const transformedResults = filteredResults.map(item => ({
+    const transformedResults = titleResults.map(item => ({
       id: item.id,
       tmdb_id: item.id,
       title: item.title || item.name,
@@ -138,9 +136,26 @@ export const searchTitles = async (query, country = null, language = null) => {
       backdrop_path: item.backdrop_path,
     }));
 
+    const peopleResults = (json.results || [])
+      .filter(item => item.media_type === 'person')
+      .map(item => ({
+        id: item.id,
+        tmdb_id: item.id,
+        name: item.name,
+        profile_path: item.profile_path
+          ? `https://image.tmdb.org/t/p/w185${item.profile_path}`
+          : null,
+        known_for_department: item.known_for_department,
+        known_for: (item.known_for || [])
+          .map(kf => kf.title || kf.name)
+          .slice(0, 3)
+          .join(', '),
+        type: 'person',
+      }));
+
     return {
       title_results: transformedResults,
-      people_results: [],
+      people_results: peopleResults,
     };
   } catch (error) {
     console.error('Error searching titles:', error);
@@ -450,6 +465,63 @@ export const searchCollections = async (query, language = 'en-US') => {
   } catch (error) {
     console.error('Error searching collections:', error);
     return [];
+  }
+};
+
+/**
+ * Get person details and filmography
+ * @param {number} personId - Person ID
+ * @param {string} language - Language code
+ * @returns {Promise} - Person details with credits
+ */
+export const getPersonDetails = async (personId, language = 'en-US') => {
+  try {
+    const [details, credits] = await Promise.all([
+      fetchFromTMDB(`/person/${personId}`, { language }),
+      fetchFromTMDB(`/person/${personId}/combined_credits`, { language }),
+    ]);
+
+    const seen = new Set();
+    const uniqueCredits = (credits.cast || [])
+      .filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return item.media_type === 'movie' || item.media_type === 'tv';
+      })
+      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+    return {
+      id: details.id,
+      name: details.name,
+      biography: details.biography,
+      birthday: details.birthday,
+      deathday: details.deathday,
+      known_for_department: details.known_for_department,
+      place_of_birth: details.place_of_birth,
+      profile_path: details.profile_path
+        ? `https://image.tmdb.org/t/p/w300${details.profile_path}`
+        : null,
+      credits: uniqueCredits.map(item => ({
+        id: item.id,
+        title: item.title || item.name,
+        year: item.release_date
+          ? new Date(item.release_date).getFullYear()
+          : item.first_air_date
+          ? new Date(item.first_air_date).getFullYear()
+          : null,
+        imdb_rating: item.vote_average || null,
+        tmdb_type: item.media_type === 'movie' ? 'movie' : 'tv',
+        type: item.media_type === 'movie' ? 'movie' : 'tv_series',
+        poster: item.poster_path
+          ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+          : null,
+        character: item.character,
+        plot_overview: item.overview,
+      })),
+    };
+  } catch (error) {
+    console.error('Error fetching person details:', error);
+    throw error;
   }
 };
 

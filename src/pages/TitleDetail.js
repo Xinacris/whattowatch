@@ -172,14 +172,19 @@ const TitleDetail = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="max-w-6xl w-full mx-auto px-4 py-10">
         {/* Cast */}
         {cast.length > 0 && (
           <section className="contentSection">
             <h2 className="sectionTitle">{t('titleDetail.cast')}</h2>
             <div className="castScroll">
               {cast.map(person => (
-                <div key={person.id} className="castCard">
+                <button
+                  key={person.id}
+                  className="castCard"
+                  onClick={() => navigate(`/person/${person.id}`)}
+                  title={person.name}
+                >
                   <div className="castPhoto">
                     {person.profile_path ? (
                       <img src={person.profile_path} alt={person.name} />
@@ -189,7 +194,7 @@ const TitleDetail = () => {
                   </div>
                   <p className="castName">{person.name}</p>
                   <p className="castCharacter">{person.character}</p>
-                </div>
+                </button>
               ))}
             </div>
           </section>

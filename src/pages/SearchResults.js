@@ -20,6 +20,7 @@ const SearchResults = () => {
   );
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [results, setResults] = useState([]);
+  const [peopleResults, setPeopleResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -64,6 +65,7 @@ const SearchResults = () => {
           }
 
           setResults(processedResults);
+          setPeopleResults(data?.people_results || []);
         } catch (err) {
           setError(err.response?.data?.error || err.message || 'Failed to search. Please try again.');
           setResults([]);
@@ -138,11 +140,47 @@ const SearchResults = () => {
 
         {!loading && !error && searchQuery && (
           <div>
-            <div className="flex flex-wrap items-center gap-4 mb-6">
+            {/* People results */}
+            {peopleResults.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
+                  {t('person.people')}
+                </h2>
+                <div className="flex gap-3 flex-wrap">
+                  {peopleResults.map(person => (
+                    <button
+                      key={person.id}
+                      className="personResultCard"
+                      onClick={() => navigate(`/person/${person.id}`)}
+                    >
+                      <div className="personResultPhoto">
+                        {person.profile_path ? (
+                          <img src={person.profile_path} alt={person.name} />
+                        ) : (
+                          <span>👤</span>
+                        )}
+                      </div>
+                      <div className="personResultInfo">
+                        <p className="personResultName">{person.name}</p>
+                        {person.known_for_department && (
+                          <p className="personResultDept">{person.known_for_department}</p>
+                        )}
+                        {person.known_for && (
+                          <p className="personResultKnownFor">{person.known_for}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Title results */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
               <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
                 {t('common.searchResultsFor')} &ldquo;{searchQuery}&rdquo;
               </h2>
-              <div className="flex gap-2 ml-auto">
+              <div className="flex gap-2 flex-wrap">
                 <button className={filterBtnClass('all')} onClick={() => setActiveFilter('all')}>
                   {t('common.filterAll')}
                   {activeFilter === 'all' && results.length > 0 && (

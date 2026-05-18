@@ -259,6 +259,21 @@
   flex-shrink: 0;
   width: 96px;
   text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.75rem;
+  transition: background 0.18s, transform 0.15s;
+
+  &:hover {
+    background: var(--bg-hover);
+    transform: translateY(-3px);
+
+    .castName {
+      color: var(--accent-color);
+    }
+  }
 }
 
 .castPhoto {
@@ -400,4 +415,28 @@
 @media (max-width: 768px) {
   .backdropHero { min-height: 420px; }
   .sourcesGrid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .backdropContent { padding: 1.25rem 1.25rem 2rem; }
+  .sectionTitle { font-size: 1.35rem; }
+}
+
+// On mobile, switch overlay to in-flow so the hero height adapts to content
+@media (max-width: 640px) {
+  .backdropHero {
+    min-height: 0;
+  }
+
+  .backdropOverlay {
+    position: relative;
+    inset: unset;
+    width: 100%;
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .backdropContent { padding: 1rem 1rem 1.5rem; }
+  .heroTitle { font-size: 1.5rem; }
+  .sourcesGrid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .sourceCard { padding: 0.85rem 0.5rem; }
+  .sourceLogo { width: 56px; height: 56px; }
 }

@@ -59,5 +59,26 @@
     "cast": "Oyuncular",
     "watchTrailer": "Fragmanı İzle",
     "closeTrailer": "Kapat"
+  },
+  "person": {
+    "people": "Kişiler",
+    "filmography": "Filmografisi",
+    "born": "Doğum:",
+    "died": "Ölüm:",
+    "showMore": "Devamını gör",
+    "showLess": "Daha az",
+    "department": {
+      "Acting": "Oyunculuk",
+      "Directing": "Yönetmenlik",
+      "Writing": "Senaryo",
+      "Production": "Yapım",
+      "Sound": "Ses",
+      "Art": "Sanat",
+      "Camera": "Kamera",
+      "Editing": "Kurgu",
+      "Costume & Make-Up": "Kostüm & Makyaj",
+      "Visual Effects": "Görsel Efektler",
+      "Crew": "Ekip"
+    }
   }
 }

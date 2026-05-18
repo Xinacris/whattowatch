@@ -59,5 +59,26 @@
     "cast": "Cast",
     "watchTrailer": "Watch Trailer",
     "closeTrailer": "Close"
+  },
+  "person": {
+    "people": "People",
+    "filmography": "Filmography",
+    "born": "Born:",
+    "died": "Died:",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "department": {
+      "Acting": "Acting",
+      "Directing": "Directing",
+      "Writing": "Writing",
+      "Production": "Production",
+      "Sound": "Sound",
+      "Art": "Art",
+      "Camera": "Camera",
+      "Editing": "Editing",
+      "Costume & Make-Up": "Costume & Make-Up",
+      "Visual Effects": "Visual Effects",
+      "Crew": "Crew"
+    }
   }
 }

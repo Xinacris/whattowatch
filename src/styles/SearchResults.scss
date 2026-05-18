@@ -1,3 +1,80 @@
+// Person result cards
+.personResultCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem 0.6rem 0.6rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+
+    .personResultName {
+      color: var(--accent-color);
+    }
+  }
+}
+
+.personResultPhoto {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.4rem;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.personResultInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.personResultName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.personResultDept {
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  margin: 0;
+  font-weight: 500;
+}
+
+.personResultKnownFor {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
 // Dark theme error container
 [data-theme="dark"] .errorContainer {
   background-color: #7f1d1d;

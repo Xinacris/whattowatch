@@ -1,0 +1,219 @@
+// Person Header
+.personBackBtn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+}
+
+.personHeader {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.personPhotoWrap {
+  flex-shrink: 0;
+}
+
+.personPhoto {
+  width: 220px;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--border-color);
+  display: block;
+
+  @media (max-width: 640px) {
+    width: 160px;
+  }
+}
+
+.personPhotoFallback {
+  width: 220px;
+  height: 280px;
+  border-radius: 1rem;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+
+  @media (max-width: 640px) {
+    width: 160px;
+    height: 200px;
+    font-size: 3.5rem;
+  }
+}
+
+.personInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.personName {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.4rem;
+  line-height: 1.2;
+
+  @media (max-width: 640px) {
+    font-size: 1.85rem;
+  }
+}
+
+.personDepartment {
+  font-size: 1rem;
+  color: var(--accent-color);
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.personMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.personMetaItem {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.personMetaLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 0.4rem;
+}
+
+.personBio {
+  p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem;
+  }
+}
+
+.bioToggle {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// Filmography
+.filmographyHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 500px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.filmographyTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.filmographyFilters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// Skeleton
+@keyframes shimmer {
+  0% { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+
+.personSkeleton {
+  display: flex;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.skeletonPhoto {
+  width: 220px;
+  height: 330px;
+  border-radius: 1rem;
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  flex-shrink: 0;
+
+  @media (max-width: 640px) {
+    width: 160px;
+    height: 230px;
+  }
+}
+
+.skeletonInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.skeletonLine {
+  border-radius: 0.375rem;
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  margin-bottom: 0.5rem;
+}
