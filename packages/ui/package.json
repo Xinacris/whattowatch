@@ -1,0 +1,14 @@
+{
+  "name": "@wtw/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./styles.css": "./src/styles.css" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src"
+  },
+  "dependencies": { "@wtw/core": "workspace:*", "@wtw/tokens": "workspace:*" },
+  "peerDependencies": { "next": "*", "react": "*" },
+  "devDependencies": { "@types/react": "19.3.0", "@wtw/config": "workspace:*" }
+}

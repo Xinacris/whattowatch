@@ -26,3 +26,15 @@ yarn-error.log*
 # Test scripts
 test_tmdb.js
 verify_search.js
+
+# v2
+node_modules
+.next
+.turbo
+dist
+.vercel
+.expo
+test-results
+playwright-report
+*.tsbuildinfo
+next-env.d.ts

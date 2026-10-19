@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "whattowatch-web": {
+      "development": { "local": 3000, "fallback": "whattowatch.vercel.app" }
+    },
+    "whattowatch-match": {
+      "routing": [{ "group": "match", "paths": ["/match", "/match/:path*"] }],
+      "development": { "local": 3001 }
+    }
+  },
+  "options": { "localProxyPort": 3024 }
+}

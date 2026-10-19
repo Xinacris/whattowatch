@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+nodeLinker: hoisted
+allowBuilds:
+  unrs-resolver: true
+  sharp: true
+  esbuild: true
+  "@tailwindcss/oxide": true

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalPassThroughEnv": ["TMDB_READ_TOKEN", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN", "ROOM_STORE"],
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**", "dist/**"] },
+    "lint": {},
+    "typecheck": {},
+    "test": { "outputs": [] },
+    "dev": { "cache": false, "persistent": true }
+  }
+}
