@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { encodeLink, formatRuntime, GENRES, genreName, makeSeed, MAX_GENRES, sanitizeFilters, type Era, type Kind } from "@wtw/core";
+import { freshLink, formatRuntime, GENRES, genreName, makeSeed, MAX_GENRES, sanitizeFilters, type Era, type Kind } from "@wtw/core";
 import { useT, usePrefs } from "@wtw/ui";
 import { api } from "@/lib/api";
 import { getViewer, setViewerName } from "@/lib/viewer";
@@ -33,7 +33,7 @@ export function SetupForm({ providers, liveAvailable }: { providers: Provider[];
     if (mode === "link") {
       // Hard navigation: fresh deck store, and the URL is the whole state in link mode.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(`/match/link?d=${encodeLink({ filters, seed: makeSeed(), voters: [] })}`);
+      window.location.assign(`/match/link?d=${freshLink(filters, makeSeed())}`);
       return;
     }
     setBusy(true);

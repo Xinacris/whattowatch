@@ -1,4 +1,5 @@
-import { makeRoomCode, makeSeed, sanitizeFilters, syncRoom, type RoomFilters } from "@wtw/core";
+import { firstBook, makeRoomCode, makeSeed, sanitizeFilters, syncRoom, type RoomFilters } from "@wtw/core";
+import { deal } from "@/lib/deal";
 import { getRoomStore } from "@/lib/store";
 import { badRequest, body, liveOff, parseViewer, reply } from "@/lib/http";
 
@@ -13,8 +14,11 @@ export async function POST(req: Request) {
     const code = makeRoomCode();
     if (await store.get(code)) continue;
     const now = Date.now();
-    await store.create({ code, filters, seed: makeSeed(), createdAt: now, hostId: viewer.id });
-    return reply(await syncRoom(store, code, viewer, now));
+    const seed = makeSeed();
+    const book = await firstBook(filters, seed, deal).catch(() => null);
+    if (!book) return Response.json({ error: "tmdb_unavailable" }, { status: 502 });
+    await store.create({ code, filters, seed, createdAt: now, hostId: viewer.id }, book);
+    return reply(await syncRoom(store, code, viewer, now, deal));
   }
   return Response.json({ error: "busy" }, { status: 503 });
 }

@@ -1,4 +1,5 @@
 import { castVote, normalizeRoomCode, parseTitleKey, syncRoom, titleKey, type Vote } from "@wtw/core";
+import { deal } from "@/lib/deal";
 import { getRoomStore } from "@/lib/store";
 import { badRequest, body, liveOff, noStore, parseViewer, reply } from "@/lib/http";
 
@@ -14,7 +15,7 @@ export async function POST(req: Request, ctx: RouteContext<"/match/api/rooms/[co
   const viewer = parseViewer(b?.viewer);
   if (!viewer) return badRequest();
   const now = Date.now();
-  if (action === "sync") return reply(await syncRoom(store, code, viewer, now));
+  if (action === "sync") return reply(await syncRoom(store, code, viewer, now, deal));
   if (action === "leave") {
     await store.removeMember(code, viewer.id);
     return Response.json({ ok: true }, { headers: noStore });
@@ -23,5 +24,5 @@ export async function POST(req: Request, ctx: RouteContext<"/match/api/rooms/[co
   const parsed = typeof b?.key === "string" ? parseTitleKey(b.key) : null;
   const vote = (b?.vote ?? null) as Vote | null;
   if (!parsed || !VOTES.includes(vote)) return badRequest();
-  return reply(await castVote(store, code, viewer, titleKey(parsed.type, parsed.id), vote, now));
+  return reply(await castVote(store, code, viewer, titleKey(parsed.type, parsed.id), vote, now, deal));
 }

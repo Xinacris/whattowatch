@@ -1,5 +1,5 @@
 import "server-only";
-import { buildDeckPage, collection, filtersFromQuery, guessLang, guessRegion, person, providersInRegion, search, searchCollections, titleDetail, tmdbLanguage, TmdbError, trending, type Lang } from "@wtw/core";
+import { buildDeckPage, collection, deckCard, parseTitleKey, filtersFromQuery, guessLang, guessRegion, person, providersInRegion, search, searchCollections, titleDetail, tmdbLanguage, TmdbError, trending, type Lang } from "@wtw/core";
 import { tmdb } from "./tmdb";
 
 const CACHE = "public, s-maxage=3600, stale-while-revalidate=86400";
@@ -34,6 +34,14 @@ const routes: Record<string, Route> = {
   person: ([id], { tl }) => { const n = positiveInt(id); return n ? person(tmdb(), n, tl) : null; },
   collection: ([id], { tl }) => { const n = positiveInt(id); return n ? collection(tmdb(), n, tl) : null; },
   providers: (_s, { region, tl }) => providersInRegion(tmdb(), region, tl).then((providers) => ({ region, providers })),
+  /** Fixed decks: these keys, in this order, as swipe cards. Titles that fail to load are dropped. */
+  cards: (_s, { q, tl, region }) => {
+    const keys = (q.get("keys") ?? "").split(".").map(parseTitleKey).filter((k) => k !== null).slice(0, 60);
+    if (!keys.length) return null;
+    const only = (q.get("providers") ?? "").split(".").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+    return Promise.allSettled(keys.map((k) => deckCard(tmdb(), k.type, k.id, tl, region, only)))
+      .then((rs) => rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])));
+  },
   deck: (_s, { q, tl }) => {
     const seed = q.get("seed") ?? "";
     const page = positiveInt(q.get("page") ?? "0") ?? 0;

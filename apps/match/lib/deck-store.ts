@@ -5,7 +5,7 @@ import { api } from "./api";
 
 export { remaining } from "@wtw/core";
 
-const session = createDeckSession(api.deck);
+const session = createDeckSession(api.deck, api.cards);
 
 type Hook = {
   (): DeckState & typeof session;

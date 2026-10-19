@@ -32,3 +32,20 @@ export async function swipe(page: Page, key: "ArrowRight" | "ArrowLeft" | "Arrow
   await expect(page.getByRole("group").first()).not.toHaveAttribute("aria-label", before);
   return before;
 }
+
+/** Swipe a run of cards: "L" yes, "N" no, "S" seen it. Returns the titles in order. */
+export async function swipeRun(page: Page, seq: string): Promise<string[]> {
+  const keys = { L: "ArrowRight", N: "ArrowLeft", S: "ArrowUp" } as const;
+  const titles: string[] = [];
+  for (const c of seq) titles.push(await swipe(page, keys[c as keyof typeof keys]));
+  return titles;
+}
+
+/** The last swipe of a run ends the deck, so there's no next card to wait for. */
+export async function finalSwipe(page: Page, key: "ArrowRight" | "ArrowLeft" | "ArrowUp"): Promise<string> {
+  const title = await topCard(page);
+  await page.keyboard.press(key);
+  return title;
+}
+
+export const counter = (page: Page) => page.getByTestId("round-counter");

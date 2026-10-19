@@ -11,13 +11,14 @@ import { SwipeCard, type SwipeHandle } from "./swipe-card";
 interface Props {
   onVote(key: string, vote: Vote): void;
   onUndo(key: string): void;
-  aside?: ReactNode; // share button, match count, who we're waiting on
+  aside?: ReactNode; // round counter, who we're waiting on
   exhausted?: ReactNode; // what to show when you're through the whole stack
+  banner?: string | null; // "five more on the pile"
 }
 
 const KEYS: Record<string, Vote> = { ArrowRight: "like", ArrowLeft: "nope", ArrowUp: "seen" };
 
-export function Deck({ onVote, onUndo, aside, exhausted }: Props) {
+export function Deck({ onVote, onUndo, aside, exhausted, banner }: Props) {
   const t = useT();
   const state = useDeck();
   const left = remaining(state);
@@ -49,6 +50,8 @@ export function Deck({ onVote, onUndo, aside, exhausted }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
+      {aside}
+      {banner && <p role="status" className="sticker -rotate-1 self-start" data-testid="round-banner">{banner}</p>}
       <div className="relative aspect-[2/3.35] w-full">
         {next && (
           <div className="absolute inset-0 opacity-70" style={{ transform: `rotate(${tilt[1]}deg) scale(0.96)` }} aria-hidden>
@@ -71,7 +74,6 @@ export function Deck({ onVote, onUndo, aside, exhausted }: Props) {
         <button type="button" className="label text-paper-dim underline-offset-4 hover:text-label hover:underline disabled:opacity-30" disabled={!state.last} onClick={undo}>↶ {t("deck.undo")}</button>
         <span className="label hidden text-seen sm:inline">{t("deck.keys")}</span>
       </div>
-      {aside}
     </div>
   );
 }
