@@ -1,1 +1,55 @@
+/* Tailwind theme wired to CSS variables that come from @wtw/tokens (see tokensCss()). */
+@theme inline {
+  --color-shelf: var(--wtw-shelf);
+  --color-shelf-raised: var(--wtw-shelfRaised);
+  --color-shelf-high: var(--wtw-shelfHigh);
+  --color-rule: var(--wtw-rule);
+  --color-paper: var(--wtw-paper);
+  --color-paper-dim: var(--wtw-paperDim);
+  --color-label: var(--wtw-label);
+  --color-label-ink: var(--wtw-labelInk);
+  --color-nope: var(--wtw-nope);
+  --color-seen: var(--wtw-seen);
+  --font-display: var(--font-anton), "Arial Narrow", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --radius-tape: 2px;
+}
 
+html { background: var(--wtw-shelf); color: var(--wtw-paper); color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+body { background: var(--wtw-shelf); font-family: var(--font-sans); min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+
+/* Film grain. Static on purpose: grain that crawls is a screensaver. */
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: 0.07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@layer components {
+  .display { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.92; }
+  .label { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
+  .btn {
+    font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; font-size: 14px;
+    border: 2px solid var(--wtw-paper); padding: 12px 18px; display: inline-flex; align-items: center; gap: 10px;
+    transition: transform 80ms ease, background-color 80ms ease;
+  }
+  .btn:active { transform: translate(2px, 2px); }
+  .btn:disabled { opacity: 0.45; pointer-events: none; }
+  .btn-label { background: var(--wtw-label); color: var(--wtw-labelInk); border-color: var(--wtw-labelInk); box-shadow: 4px 4px 0 var(--wtw-paper); }
+  .btn-label:active { box-shadow: 2px 2px 0 var(--wtw-paper); }
+  .btn-ghost:hover { background: var(--wtw-shelfHigh); }
+  .field {
+    font-family: var(--font-mono); background: var(--wtw-shelfHigh); border: 2px solid var(--wtw-rule); color: var(--wtw-paper);
+    padding: 11px 14px; outline: none; border-radius: 2px;
+  }
+  .field:focus { border-color: var(--wtw-label); }
+  .tape { border: 2px solid var(--wtw-rule); background: var(--wtw-shelfRaised); border-radius: 2px; }
+  .sticker {
+    font-family: var(--font-mono); text-transform: uppercase; font-weight: 700; font-size: 11px; letter-spacing: 0.06em;
+    background: var(--wtw-label); color: var(--wtw-labelInk); padding: 3px 7px; display: inline-block; border: 2px solid var(--wtw-labelInk);
+  }
+  .chip { font-family: var(--font-mono); font-size: 13px; border: 2px solid var(--wtw-rule); padding: 7px 12px; cursor: pointer; user-select: none; }
+  .chip[aria-pressed="true"], .chip:has(input:checked) { border-color: var(--wtw-label); background: var(--wtw-label); color: var(--wtw-labelInk); }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--wtw-paper); outline-offset: 2px; }
+}

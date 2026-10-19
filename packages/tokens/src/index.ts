@@ -63,3 +63,9 @@ export const motion = {
   spring: { stiffness: 380, damping: 28, mass: 1 },
   flyOutMs: 220,
 } as const;
+
+/** CSS custom properties generated from the tokens above, so Tailwind reads the same source as mobile. */
+export function tokensCss(): string {
+  const vars = (c: Record<string, string>) => Object.entries(c).map(([k, v]) => `--wtw-${k}:${v};`).join("");
+  return `:root{${vars(colors)}--wtw-border:${border.width}px;}` + `:root[data-theme="light"]{${vars(lightColors)}}`;
+}

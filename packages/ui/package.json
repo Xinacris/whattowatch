@@ -3,12 +3,30 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts", "./styles.css": "./src/styles.css" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css",
+    "./server": "./src/server/index.ts"
+  },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint src"
   },
-  "dependencies": { "@wtw/core": "workspace:*", "@wtw/tokens": "workspace:*" },
-  "peerDependencies": { "next": "*", "react": "*" },
-  "devDependencies": { "@types/react": "19.3.0", "@wtw/config": "workspace:*" }
+  "dependencies": {
+    "@wtw/core": "workspace:*",
+    "@wtw/tokens": "workspace:*",
+    "@vercel/microfrontends": "2.4.1",
+    "server-only": "0.0.1"
+  },
+  "peerDependencies": {
+    "next": "*",
+    "react": "*"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@wtw/config": "workspace:*",
+    "@types/react-dom": "19.2.3",
+    "next": "16.4.2",
+    "react": "19.3.1"
+  }
 }

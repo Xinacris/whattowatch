@@ -3,7 +3,7 @@
 - [x] 0. Audit & safety
 - [x] 1. Monorepo skeleton
 - [x] 2. packages/core
-- [ ] 3. apps/web
+- [x] 3. apps/web
 - [ ] 4. apps/match
 - [ ] 5. Microfrontends
 - [ ] 6. apps/mobile
@@ -27,3 +27,7 @@
 - Phase 2: link codec is a versioned binary format (varint, delta-encoded ids), base64url. Holds up to 8 voters so a link can go round a group. 120 likes is under 300 chars.
 - Phase 2: genres are app-level slugs mapped to TMDB movie/TV ids; genres with no TV equivalent (horror, thriller, romance) drop TV from the deck instead of silently ignoring the filter.
 - Phase 2: era has a third value, "any" (default), besides new/classics: fewer dead decks.
+- Phase 3: one TMDB proxy implementation (`handleTmdbApi` in `@wtw/ui/server`, guarded by `server-only`), mounted by web at `/api/tmdb/*` and by match at `/match/api/tmdb/*`. Mobile uses the same endpoints.
+- Phase 3: posters use plain `<img>` against TMDB's pre-sized CDN images instead of `next/image`, to stay off the Hobby image-optimization quota.
+- Phase 3: Tailwind 4 theme reads CSS variables generated from `@wtw/tokens` (`tokensCss()`), the same source the mobile StyleSheet uses.
+- Phase 3: region = `?region=` > `wtw_region` cookie > `x-vercel-ip-country` > Accept-Language > US. Language = `wtw_lang` cookie > Accept-Language.
