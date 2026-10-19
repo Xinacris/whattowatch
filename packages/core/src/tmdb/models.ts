@@ -14,6 +14,8 @@ export interface TitleSummary {
   rating: number | null;
   overview: string;
   genreIds: number[];
+  /** Original language, ISO 639-1. */
+  language?: string;
 }
 
 export type ProviderKind = "sub" | "free" | "ads" | "rent" | "buy";

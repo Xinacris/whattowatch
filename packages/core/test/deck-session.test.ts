@@ -32,3 +32,26 @@ describe("deck session", () => {
     expect(s.getState()).toMatchObject({ error: false, done: true });
   });
 });
+
+describe("fixed decks", () => {
+  const card = (key: string) => ({ key, id: Number(key.slice(1)), type: "movie", title: key, year: 2000, poster: null, rating: 7, overview: "", genreIds: [], runtime: 90, genreNames: [], providers: [], cast: [] }) as never;
+  it("loads exactly these keys in this order, and more when a room deals them", async () => {
+    const asked: string[][] = [];
+    const s = createDeckSession(async () => ({ cards: [], done: true }), async (keys) => { asked.push(keys); return keys.filter((k) => k !== "m404").map(card); });
+    s.start(f, "seed", "en", {}, { keys: ["m3", "m404", "m1"] });
+    await flush();
+    expect(s.getState().cards.map((c) => c.key)).toEqual(["m3", "m1"]);
+    s.setKeys(["m3", "m404", "m1", "m7"]);
+    await flush();
+    expect(s.getState().cards.map((c) => c.key)).toEqual(["m3", "m1", "m7"]);
+    expect(asked).toEqual([["m3", "m404", "m1"], ["m7"]]);
+  });
+  it("v1 links stop after the limit", async () => {
+    const tmdb = fakeTmdb(60);
+    const s = createDeckSession((fl, seed, page, lang) => buildDeckPage(tmdb, fl, seed, page, lang));
+    s.start(f, "seed", "en", {}, { limit: 10 });
+    await flush(); await flush();
+    expect(s.getState()).toMatchObject({ done: true });
+    expect(s.getState().cards).toHaveLength(10);
+  });
+});

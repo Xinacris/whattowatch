@@ -1,62 +1,104 @@
 import { describe, expect, it } from "vitest";
-import { castVote, createMemoryStore, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, type RoomStore } from "../src";
+import { castVote, createMemoryStore, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, type DealPage, type RoomStore, type TitleKey, type Vote } from "../src";
 
 const A = { id: "a", name: "Ayşe" };
 const B = { id: "b", name: "Burak" };
 const C = { id: "c", name: "Cem" };
+const filters = sanitizeFilters({});
 
-async function room(store: RoomStore = createMemoryStore(), now = 0) {
-  await store.create({ code: "ABC234", filters: sanitizeFilters({}), seed: "seed", createdAt: now, hostId: "a" });
+/** `total` titles, 20 per page. Counts calls so we can see a deck extend once. */
+function dealer(total = 60): DealPage & { calls: number } {
+  const deal = (async (_f, _s, page) => {
+    deal.calls++;
+    const keys = Array.from({ length: 20 }, (_, i) => page * 20 + i + 1).filter((n) => n <= total).map((n) => `m${n}` as TitleKey);
+    return { keys, done: (page + 1) * 20 >= total };
+  }) as DealPage & { calls: number };
+  deal.calls = 0;
+  return deal;
+}
+
+async function room(deal = dealer(), store: RoomStore = createMemoryStore()) {
+  await store.create({ code: "ABC234", filters, seed: "seed", createdAt: 0, hostId: "a" }, await firstBook(filters, "seed", deal));
   return store;
 }
 
+/** Vote the whole current deck: `likes` yeses first, the rest nope. */
+async function swipeAll(s: RoomStore, who: typeof A, likes: number, now: number, deal: DealPage, vote: Vote = "nope") {
+  const r = await syncRoom(s, "ABC234", who, now, deal);
+  if (!r.ok) throw new Error(r.reason);
+  let last: Awaited<ReturnType<typeof syncRoom>> = r;
+  for (const [i, key] of r.value.deck.entries()) {
+    if (r.value.mine[key]) continue;
+    last = await castVote(s, "ABC234", who, key, i < likes ? "like" : vote, now, deal);
+  }
+  return last;
+}
+
 describe("live rooms", () => {
-  it("matches when everyone present likes it, and shows it to both", async () => {
-    const s = await room();
-    await syncRoom(s, "ABC234", A, 1);
-    await syncRoom(s, "ABC234", B, 1);
-    await castVote(s, "ABC234", A, "m1", "like", 2);
-    const r = await castVote(s, "ABC234", B, "m1", "like", 3);
-    expect(r.ok && r.value.matches).toEqual([{ key: "m1", at: 3 }]);
-    const a = await syncRoom(s, "ABC234", A, 4);
-    expect(a.ok && a.value.matches.map((m) => m.key)).toEqual(["m1"]);
+  it("deals 10 to start; results stay hidden until everyone is through", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    await syncRoom(s, "ABC234", A, 1, deal);
+    await syncRoom(s, "ABC234", B, 1, deal);
+    const a = await swipeAll(s, A, 4, 2, deal);
+    expect(a.ok && a.value).toMatchObject({ done: false, results: null, waitingOn: ["Burak"] });
+    expect(a.ok && a.value.deck).toHaveLength(10);
+    const b = await swipeAll(s, B, 3, 3, deal);
+    expect(b.ok && b.value).toMatchObject({ done: true, waitingOn: [], results: ["m1", "m2", "m3"] });
   });
-  it("two people landing the last like together record one match", async () => {
-    const s = await room();
-    await syncRoom(s, "ABC234", A, 1);
-    await syncRoom(s, "ABC234", B, 1);
-    await s.setVote("ABC234", "a", "m1", "like");
-    await s.setVote("ABC234", "b", "m1", "like");
-    await Promise.all([syncRoom(s, "ABC234", A, 5), syncRoom(s, "ABC234", B, 5)]);
-    expect((await s.get("ABC234"))?.matches).toHaveLength(1);
+  it("anyone under 30% deals five more for everyone, once, even when both finish together", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    await syncRoom(s, "ABC234", A, 1, deal);
+    await syncRoom(s, "ABC234", B, 1, deal);
+    const view = await syncRoom(s, "ABC234", A, 1, deal);
+    const keys = view.ok ? view.value.deck : [];
+    for (const k of keys) { await s.setVote("ABC234", "a", k, keys.indexOf(k) < 4 ? "like" : "nope"); await s.setVote("ABC234", "b", k, keys.indexOf(k) < 1 ? "like" : "nope"); }
+    const [x, y] = await Promise.all([syncRoom(s, "ABC234", A, 2, deal), syncRoom(s, "ABC234", B, 2, deal)]);
+    expect((await s.get("ABC234"))?.book.deck).toHaveLength(15);
+    expect([x, y].map((r) => r.ok && r.value.done)).toEqual([false, false]);
+    expect(y.ok && y.value.waitingOn.sort()).toEqual(["Ayşe", "Burak"]);
   });
-  it("someone leaving mid-deck stops blocking the rest", async () => {
-    const s = await room();
-    for (const v of [A, B, C]) await syncRoom(s, "ABC234", v, 0);
-    await castVote(s, "ABC234", A, "m1", "like", 1);
-    const before = await castVote(s, "ABC234", B, "m1", "like", 2);
-    expect(before.ok && before.value.matches).toEqual([]);
+  it("stops at 30 cards, and when the shelf runs dry", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    for (const v of [A, B]) await syncRoom(s, "ABC234", v, 1, deal);
+    for (let round = 0; round < 6; round++) { await swipeAll(s, A, 0, 2, deal); await swipeAll(s, B, 0, 2, deal); }
+    const end = await syncRoom(s, "ABC234", A, 3, deal);
+    expect(end.ok && end.value).toMatchObject({ done: true, results: [] });
+    expect(end.ok && end.value.deck).toHaveLength(30);
+
+    const thin = dealer(7);
+    const s2 = await room(thin);
+    for (const v of [A, B]) await syncRoom(s2, "ABC234", v, 1, thin);
+    await swipeAll(s2, A, 0, 2, thin);
+    const done = await swipeAll(s2, B, 0, 2, thin);
+    expect(done.ok && done.value).toMatchObject({ done: true });
+    expect(done.ok && done.value.deck).toHaveLength(7);
+  });
+  it("someone leaving stops blocking the rest", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    for (const v of [A, B, C]) await syncRoom(s, "ABC234", v, 0, deal);
+    await swipeAll(s, A, 5, 1, deal);
+    const before = await swipeAll(s, B, 5, 2, deal);
+    expect(before.ok && before.value.waitingOn).toEqual(["Cem"]);
     const later = PRESENCE_MS + 10;
-    await syncRoom(s, "ABC234", A, later);
-    const after = await syncRoom(s, "ABC234", B, later);
-    expect(after.ok && after.value.members.map((m) => m.id)).toEqual(["a", "b"]);
-    expect(after.ok && after.value.matches.map((m) => m.key)).toEqual(["m1"]);
+    await syncRoom(s, "ABC234", A, later, deal);
+    const after = await syncRoom(s, "ABC234", B, later, deal);
+    expect(after.ok && after.value).toMatchObject({ done: true, results: ["m1", "m2", "m3", "m4", "m5"] });
   });
-  it("undo removes a vote and only your own ballot is returned", async () => {
+  it("undo removes a vote, votes off the deck are ignored, only your own ballot comes back", async () => {
     const s = await room();
     await syncRoom(s, "ABC234", B, 0);
     await castVote(s, "ABC234", A, "m1", "like", 0);
     const undone = await castVote(s, "ABC234", A, "m1", null, 1);
     expect(undone.ok && undone.value.mine).toEqual({});
+    const off = await castVote(s, "ABC234", A, "m999", "like", 1);
+    expect(off.ok && off.value.mine).toEqual({});
     await castVote(s, "ABC234", B, "m2", "nope", 1);
     const a = await syncRoom(s, "ABC234", A, 1);
     expect(a.ok && a.value.mine).toEqual({});
-  });
-  it("late joiner gets the same seed and filters", async () => {
-    const s = await room();
-    await syncRoom(s, "ABC234", A, 0);
-    const late = await syncRoom(s, "ABC234", C, 60_000);
-    expect(late.ok && late.value.seed).toBe("seed");
   });
   it("typo, missing and expired rooms say why", async () => {
     const s = await room();

@@ -3,7 +3,7 @@ import { filtersToQuery, type RoomFilters } from "./filters";
 import type { Vote } from "./match";
 import type { Lang } from "./region";
 import type { RoomView, Viewer } from "./room";
-import type { Provider, TitleDetail, TitleKey } from "./tmdb/models";
+import type { DeckCard, Provider, TitleDetail, TitleKey } from "./tmdb/models";
 
 // The app API as seen from a client. Web passes "" (same origin), mobile passes EXPO_PUBLIC_API_URL.
 
@@ -36,6 +36,11 @@ export function createWtwApi(base: string, doFetch: typeof fetch = (...a) => fet
     deck(filters: RoomFilters, seed: string, page: number, lang: Lang) {
       const q = new URLSearchParams({ ...filtersToQuery(filters), seed, page: String(page), lang });
       return call<DeckPage>(`/match/api/tmdb/deck?${q.toString()}`);
+    },
+    cards(keys: TitleKey[], filters: RoomFilters, lang: Lang) {
+      const q = new URLSearchParams({ keys: keys.join("."), region: filters.region, lang });
+      if (filters.providers.length) q.set("providers", filters.providers.join("."));
+      return call<DeckCard[]>(`/match/api/tmdb/cards?${q.toString()}`);
     },
     createRoom: (viewer: Viewer, filters: RoomFilters) => post<RoomView>("/match/api/rooms", { viewer, filters }),
     sync: (code: string, viewer: Viewer) => post<RoomView>(`/match/api/rooms/${code}/sync`, { viewer }),

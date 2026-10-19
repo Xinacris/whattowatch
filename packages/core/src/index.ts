@@ -17,3 +17,6 @@ export * from "./tmdb/models";
 export type * from "./tmdb/raw";
 export * from "./api-client";
 export * from "./deck-session";
+export * from "./rounds";
+export * from "./results";
+export * from "./search";

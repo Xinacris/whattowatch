@@ -1,6 +1,8 @@
 import type { RoomFilters } from "./filters";
-import { currentMatches, recordMatches, type Ballot, type MatchRecord, type Vote } from "./match";
+import type { Ballot, Vote } from "./match";
+import { matchesFromVoters } from "./results";
 import { CODE_LENGTH } from "./room-code";
+import { MAX_VOTED, meetsRatio, ROUND_EXTRA, ROUND_FIRST } from "./rounds";
 import type { TitleKey } from "./tmdb/models";
 
 export const ROOM_TTL_MS = 12 * 60 * 60 * 1000;
@@ -16,22 +18,38 @@ export interface Member extends Viewer { joinedAt: number; lastSeen: number }
 
 export interface RoomMeta { code: string; filters: RoomFilters; seed: string; createdAt: number; hostId: string }
 
-export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; matches: MatchRecord[] }
+/** The room's shared deck. `pool` holds titles already fetched but not dealt yet. */
+export interface DeckBook { deck: TitleKey[]; pool: TitleKey[]; page: number; exhausted: boolean }
+
+export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; book: DeckBook }
 
 /** What a client sees on each poll. Ballots stay server-side; you only get your own. */
-export interface RoomView extends RoomMeta { members: Member[]; mine: Ballot; matches: MatchRecord[]; expiresAt: number }
+export interface RoomView extends RoomMeta {
+  members: Member[];
+  mine: Ballot;
+  deck: TitleKey[];
+  /** Names of present members with cards left. */
+  waitingOn: string[];
+  done: boolean;
+  /** Only once the room is done: nobody sees a result before everyone finishes. */
+  results: TitleKey[] | null;
+  expiresAt: number;
+}
+
+/** Pulls one discover page of title keys. Injected so core never talks to TMDB on its own. */
+export type DealPage = (filters: RoomFilters, seed: string, page: number) => Promise<{ keys: TitleKey[]; done: boolean }>;
 
 export type RoomResult<T> = { ok: true; value: T } | { ok: false; reason: "not_found" | "expired" | "full" | "bad_code" };
 
 export interface RoomStore {
   readonly kind: "redis" | "memory";
-  create(meta: RoomMeta): Promise<void>;
+  create(meta: RoomMeta, book: DeckBook): Promise<void>;
   get(code: string): Promise<Room | null>;
   upsertMember(code: string, member: Member): Promise<void>;
   removeMember(code: string, memberId: string): Promise<void>;
   setVote(code: string, memberId: string, key: TitleKey, vote: Vote | null): Promise<void>;
-  /** Must be idempotent per key: two people landing the last like together record one match. */
-  addMatches(code: string, keys: TitleKey[], at: number): Promise<void>;
+  /** Replaces the book only if the deck is still `fromLength` long. Two members finishing together extend once. */
+  extendDeck(code: string, fromLength: number, book: DeckBook): Promise<boolean>;
 }
 
 export function presentMembers(members: readonly Member[], now: number): Member[] {
@@ -42,12 +60,62 @@ export function isExpired(meta: Pick<RoomMeta, "createdAt">, now: number): boole
   return now - meta.createdAt > ROOM_TTL_MS;
 }
 
+const MAX_DEAL_PAGES = 6;
+
+/** Moves titles from the pool into the deck until it holds `size`, fetching pages as needed. */
+export async function fillBook(book: DeckBook, size: number, filters: RoomFilters, seed: string, deal: DealPage): Promise<DeckBook> {
+  let { pool, page, exhausted } = book;
+  const have = new Set([...book.deck, ...pool]);
+  for (let n = 0; book.deck.length + pool.length < size && !exhausted && n < MAX_DEAL_PAGES; n++) {
+    const res = await deal(filters, seed, page);
+    const fresh = res.keys.filter((k) => !have.has(k));
+    fresh.forEach((k) => have.add(k));
+    pool = [...pool, ...fresh];
+    page += 1;
+    exhausted = res.done;
+  }
+  const take = Math.max(0, size - book.deck.length);
+  return { deck: [...book.deck, ...pool.slice(0, take)], pool: pool.slice(take), page, exhausted: exhausted && pool.length <= take };
+}
+
+export interface RoomRound { done: boolean; pending: string[]; extendTo: number | null }
+
+/**
+ * The round rule for a room: when every present member has voted on every card, and anyone is
+ * under 30% yes, deal five more for everyone, up to 30. Otherwise the room is done.
+ */
+export function roomRound(book: DeckBook, ballots: Readonly<Record<string, Ballot>>, present: readonly string[]): RoomRound {
+  const pending = present.filter((id) => book.deck.some((k) => !ballots[id]?.[k]));
+  if (!present.length || pending.length) return { done: false, pending, extendTo: null };
+  const below = present.some((id) => {
+    const votes = book.deck.map((k) => ballots[id]?.[k]);
+    return !meetsRatio(votes.filter((v) => v === "like").length, votes.filter((v) => v === "like" || v === "nope").length);
+  });
+  const canGrow = book.deck.length < MAX_VOTED && (book.pool.length > 0 || !book.exhausted);
+  if (below && canGrow) return { done: false, pending, extendTo: Math.min(MAX_VOTED, book.deck.length + ROUND_EXTRA) };
+  return { done: true, pending, extendTo: null };
+}
+
+export async function firstBook(filters: RoomFilters, seed: string, deal: DealPage): Promise<DeckBook> {
+  return fillBook({ deck: [], pool: [], page: 0, exhausted: false }, ROUND_FIRST, filters, seed, deal);
+}
+
 export function toView(room: Room, viewerId: string, now: number): RoomView {
+  const members = presentMembers(room.members, now);
+  const ids = members.map((m) => m.id);
+  const round = roomRound(room.book, room.ballots, ids);
+  const picks = ids.map((id) => {
+    const b = room.ballots[id] ?? {};
+    return { likes: room.book.deck.filter((k) => b[k] === "like"), seen: room.book.deck.filter((k) => b[k] === "seen") };
+  });
   return {
     code: room.code, filters: room.filters, seed: room.seed, createdAt: room.createdAt, hostId: room.hostId,
-    members: presentMembers(room.members, now),
+    members,
     mine: room.ballots[viewerId] ?? {},
-    matches: room.matches,
+    deck: room.book.deck,
+    waitingOn: members.filter((m) => round.pending.includes(m.id)).map((m) => m.name),
+    done: round.done,
+    results: round.done ? matchesFromVoters(room.book.deck, picks) : null,
     expiresAt: room.createdAt + ROOM_TTL_MS,
   };
 }
@@ -60,8 +128,8 @@ async function load(store: RoomStore, code: string, now: number): Promise<RoomRe
   return { ok: true, value: room };
 }
 
-/** Join or heartbeat. Also the place matches get recorded, so any member's poll settles them. */
-export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, now: number): Promise<RoomResult<RoomView>> {
+/** Join or heartbeat. Also where the room deals more cards, so any member's poll settles a round. */
+export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, now: number, deal?: DealPage): Promise<RoomResult<RoomView>> {
   const loaded = await load(store, code, now);
   if (!loaded.ok) return loaded;
   const room = loaded.value;
@@ -71,17 +139,25 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
   await store.upsertMember(code, member);
   const members = [...room.members.filter((m) => m.id !== viewer.id), member];
   const present = presentMembers(members, now).map((m) => m.id);
-  const fresh = currentMatches(present, room.ballots).filter((k) => !room.matches.some((m) => m.key === k));
-  if (fresh.length) await store.addMatches(code, fresh, now);
-  const matches = fresh.length ? recordMatches(room.matches, fresh, now) : room.matches;
-  return { ok: true, value: toView({ ...room, members, matches }, viewer.id, now) };
+  const round = roomRound(room.book, room.ballots, present);
+  let book = room.book;
+  if (round.extendTo && deal) {
+    const next = await fillBook(book, round.extendTo, room.filters, room.seed, deal).catch(() => null);
+    const grown = next ?? book;
+    // A dry shelf still gets written, as exhausted, so the room can finish.
+    const final = grown.deck.length > book.deck.length ? grown : { ...grown, exhausted: true, pool: [] };
+    if (next && (await store.extendDeck(code, book.deck.length, final))) book = final;
+    else book = (await store.get(code))?.book ?? book;
+  }
+  return { ok: true, value: toView({ ...room, members, book }, viewer.id, now) };
 }
 
-export async function castVote(store: RoomStore, code: string, viewer: Viewer, key: TitleKey, vote: Vote | null, now: number): Promise<RoomResult<RoomView>> {
+export async function castVote(store: RoomStore, code: string, viewer: Viewer, key: TitleKey, vote: Vote | null, now: number, deal?: DealPage): Promise<RoomResult<RoomView>> {
   const loaded = await load(store, code, now);
   if (!loaded.ok) return loaded;
+  if (!loaded.value.book.deck.includes(key)) return syncRoom(store, code, viewer, now, deal);
   await store.setVote(code, viewer.id, key, vote);
-  return syncRoom(store, code, viewer, now);
+  return syncRoom(store, code, viewer, now, deal);
 }
 
 /** Dev and tests only. Production uses Redis, or tells people to use link mode. */
@@ -94,7 +170,7 @@ export function createMemoryStore(): RoomStore {
   };
   return {
     kind: "memory",
-    async create(meta) { rooms.set(meta.code, { ...meta, members: [], ballots: {}, matches: [] }); },
+    async create(meta, book) { rooms.set(meta.code, { ...meta, members: [], ballots: {}, book }); },
     async get(code) { const r = rooms.get(code); return r ? (JSON.parse(JSON.stringify(r)) as Room) : null; },
     async upsertMember(code, member) { const r = must(code); r.members = [...r.members.filter((m) => m.id !== member.id), member]; },
     async removeMember(code, id) { const r = must(code); r.members = r.members.filter((m) => m.id !== id); },
@@ -104,6 +180,11 @@ export function createMemoryStore(): RoomStore {
       if (vote) ballot[key] = vote; else delete ballot[key];
       r.ballots[id] = ballot;
     },
-    async addMatches(code, keys, at) { const r = must(code); r.matches = recordMatches(r.matches, keys, at); },
+    async extendDeck(code, fromLength, book) {
+      const r = must(code);
+      if (r.book.deck.length !== fromLength) return false;
+      r.book = book;
+      return true;
+    },
   };
 }

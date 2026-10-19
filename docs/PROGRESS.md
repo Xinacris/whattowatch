@@ -49,3 +49,22 @@
 - Phase 7: Playwright starts web, match (`ROOM_STORE=memory`) and the microfrontends proxy itself, or targets `E2E_BASE_URL`. Live-mode spec skips when remote. Found and fixed: link share now rewrites the URL before touching the clipboard, which can hang in headless and denied-permission browsers.
 - Phase 8: both projects deployed to production with `vercel deploy --prod` from the repo root (`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` per project, so the build sees the whole workspace). `TMDB_READ_TOKEN` set for production and preview via stdin; `ENABLE_EXPERIMENTAL_COREPACK=1` so Vercel uses pnpm 12. `.vercelignore` keeps every `.env*` out of uploads.
 - Phase 9: README rewritten (no emoji, real Playwright screenshots of production in `docs/`), REPORT.md and HUMAN_TODO.md written. Ratings show as `7.9/10` rather than a star glyph.
+
+# v2.1
+
+Brief: `docs/V2_1_PROMPT.md`.
+
+Plan: core first (rounds, results, codec v2 with v1 decode, search params, room deck rounds), then link mode, live mode, mobile, web search, landing, e2e, deploy, merge.
+
+- [x] 1. Read brief and current code, plan
+- [ ] 2. Core: rounds, results, codec v2 + v1, search, room rounds (tests)
+- [ ] 3. Match link mode: rounds, share screen, friend deck, results
+- [ ] 4. Match live mode: room rounds, waiting, results
+- [ ] 5. Mobile on the same core flow
+- [ ] 6. Web search: suggest, search box, filters, browse, logos, load more
+- [ ] 7. Landing: search hero and browse rows
+- [ ] 8. Playwright (a)–(f)
+- [ ] 9. Full checks, deploy, docs, push
+- [ ] 10. Fast-forward main
+
+## v2.1 decisions

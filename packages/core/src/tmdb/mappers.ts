@@ -24,6 +24,7 @@ export function toSummary(item: RawListItem, fallback?: MediaType): TitleSummary
     rating: item.vote_count ? (item.vote_average ?? null) : null,
     overview: item.overview ?? "",
     genreIds: item.genre_ids ?? [],
+    ...(item.original_language ? { language: item.original_language } : {}),
   };
 }
 
