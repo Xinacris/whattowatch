@@ -6,6 +6,5 @@
 **/.vercel
 **/.next
 **/node_modules
-apps/mobile
 test-results
 playwright-report

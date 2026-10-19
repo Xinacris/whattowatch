@@ -101,3 +101,4 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 
 ## Decisions
 - Step 2: both projects connected with `vercel git connect` (production branch `main`). Settings set through `vercel api PATCH /v9/projects`: root `apps/web` / `apps/match`, framework nextjs, install `pnpm install`, build `pnpm turbo run build --filter=<project>`, files outside the root included, ignored build step `npx turbo-ignore`. `ENABLE_EXPERIMENTAL_COREPACK=1` added for preview too (it was production-only), so preview builds use pnpm 12.
+- Step 2: the first Git builds failed with `ERR_PNPM_OUTDATED_LOCKFILE` ("the lockfile records importers["apps/mobile"], but that project's directory has no package.json"). `.vercelignore` dropped `apps/mobile`, and Git builds honour it. Removed that line; mobile sources are uploaded but never built on Vercel (the build is filtered to the project).
