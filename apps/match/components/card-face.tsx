@@ -18,7 +18,7 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
   const like = Math.min(1, Math.max(0, drag.x / 110));
   const nope = Math.min(1, Math.max(0, -drag.x / 110));
   const seen = Math.min(1, Math.max(0, -drag.y / 110)) * (Math.abs(drag.y) > Math.abs(drag.x) ? 1 : 0);
-  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `★ ${formatRating(card.rating)}`].filter(Boolean).join("  ·  ");
+  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `${formatRating(card.rating)}/10`].filter(Boolean).join("  ·  ");
   return (
     <div className="relative flex h-full flex-col overflow-hidden border-2 border-paper bg-shelf-raised">
       <Stamp text={t("deck.like")} tone="var(--wtw-label)" opacity={like} className="top-6 left-5 -rotate-12" />

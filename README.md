@@ -1,149 +1,80 @@
-# 🎬 WhatToWatch
+# WhatToWatch
 
-**Can't Decide What to Watch?** WhatToWatch is a modern React application designed to help you discover your next favorite movie or TV show. Leveraging the power of the Watchmode API, it provides instant access to up-to-date information about thousands of films and series.
+Couch. Two people. Forty minutes of scrolling. This is for ending that.
 
-## ✨ Features
+Everyone swipes the same stack of movies or shows. Right is yes, left is no, up is "seen it". The first title everybody says yes to is what you watch.
 
-### 🔍 Smart Search & Discovery
-- **Advanced Search**: Instant search by movie and TV show titles
-- **Category Filtering**: Filter by genre, year, platform, and more
-- **Trending Content**: Discover current popular movies and shows
-- **Detailed Information**: Comprehensive information pages for each title
+**https://whattowatchxinny.vercel.app**
 
-### 🎯 Personalized Experience
-- **Favorites List**: Save your favorite content and watch later
-- **Watchlist**: Organize content you want to watch
-- **Recommendations**: Personalized suggestions based on viewing history
+![The landing page: headline, start button, join-with-code box and a shelf of this week's posters](docs/screenshot-landing.png)
 
-### 📱 Modern User Interface
-- **Responsive Design**: Perfect appearance on mobile, tablet, and desktop
-- **Fast & Smooth**: Optimized performance for a seamless experience
-- **Modern UI/UX**: User-friendly and visually appealing interface
+## Two ways to play
 
-## 🚀 How It Works
+**Live room.** One person sets up the night: movies or series, which services you actually pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone joins and swipes at once. Phones check in every two seconds, and when the last yes lands, every screen says so.
 
-### 1. **API Integration**
-WhatToWatch accesses real-time movie and TV show data using the Watchmode API:
-- **Movie/TV Show Information**: Detailed metadata, cast, director information
-- **Streaming Platforms**: Information about where content can be watched
-- **IMDb Ratings**: User ratings and scores
-- **Current Data**: Continuously updated content library
+**Link mode.** No server state at all. The deck is built from a seed in the URL, so everyone gets the same cards in the same order. You swipe, then send a link that carries your picks. They swipe the same deck and the overlap shows up on their screen. They can send it back, or pass it on to a third person.
 
-### 2. **React Component Architecture**
-The application is built with modular and reusable React components:
-- **Home Page**: Trending content and featured recommendations
-- **Search Page**: Advanced filtering and search features
-- **Detail Page**: Comprehensive information display for each title
-- **User Profile**: Favorites and watchlist management
+A match means everyone currently in the room liked it. If anyone marks it "seen it", it's out. Keep swiping to collect more; the shortlist ranks them by which you agreed on first.
 
-### 3. **State Management**
-- **React Hooks**: Component state management with `useState`, `useEffect`
-- **Context API**: React Context for global state management
-- **API State**: Management of loading, success, and error states
+![The swipe deck mid-drag, card tilted with a YES stamp](docs/screenshot-deck.png)
 
-### 4. **User Flow**
-```
-User → Search/Filter → API Request → Data Processing → UI Update → User Interaction
-```
+There's also plain search with where-to-watch per country (stream, rent, buy), detected from where you are and changeable from the header.
 
-## 🛠️ Technology Stack
+No accounts. You're an anonymous device id plus whatever name you type.
 
-- **Frontend Framework**: React 18+
-- **API**: TMDB (The Movie Database) API
-- **HTTP Client**: Fetch API
-- **State Management**: React Hooks + Context API
-- **Styling**: CSS Modules / Styled Components / Tailwind CSS
-- **Routing**: React Router
-- **Build Tool**: Vite / Create React App
+## What's in here
 
-## 📋 Project Structure
+| Path | What it is |
+| --- | --- |
+| `apps/web` | Next.js. Landing, search, title, person and collection pages, and the TMDB proxy at `/api/tmdb/*`. Default microfrontend; owns `microfrontends.json`. |
+| `apps/match` | Next.js, served under `/match`. Setup, lobby, deck, match screen, shortlist, room API. |
+| `apps/mobile` | Expo Router app with the same flow. Talks to the deployed web API, never to TMDB. |
+| `packages/core` | Plain TypeScript, no React. TMDB client and mappers, deck builder, seeded shuffle, match rule, link codec, rooms, EN/TR strings. Unit tested. |
+| `packages/tokens` | Colours, type, spacing, swipe physics. Read by Tailwind on the web and by StyleSheet on mobile. |
+| `packages/ui` | Shared web pieces for both Next apps: shell, poster, provider list, server-only TMDB access. |
+| `packages/config` | Shared tsconfig and ESLint. |
 
-```
-whattowatch/
-├── src/
-│   ├── components/      # Reusable UI components
-│   ├── pages/           # Page components
-│   ├── services/        # API services
-│   ├── hooks/           # Custom React hooks
-│   ├── context/         # Context API providers
-│   ├── utils/           # Helper functions
-│   └── styles/          # Style files
-├── public/              # Static files
-└── package.json         # Dependencies
+The two Next apps deploy as separate Vercel projects (`whattowatch-web`, `whattowatch-match`) in one microfrontends group, so `/match/*` is routed to the second one under the same domain.
+
+## Running it
+
+You need Node 22+, pnpm 12, and a TMDB API key or read token from https://www.themoviedb.org/settings/api.
+
+```sh
+pnpm install
+printf 'TMDB_READ_TOKEN=%s\n' "$YOUR_TMDB_TOKEN" | tee apps/web/.env.local apps/match/.env.local > /dev/null
+pnpm build
 ```
 
-## 🎯 Use Cases
+Run both apps behind the local microfrontends proxy, then open http://localhost:3024:
 
-1. **"What should I watch?"** → Discover trending content on the home page
-2. **"I'm looking for a specific movie"** → Use the search bar
-3. **"I want to watch a horror movie"** → Apply genre filter
-4. **"What's on Netflix?"** → Apply platform filter
-5. **"Save for later"** → Add to favorites
-
-## 📦 Installation & Setup
-
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn package manager
-
-### Step 1: Clone the Repository
-```bash
-git clone https://github.com/Xinacris/whattowatch.git
-cd whattowatch
+```sh
+pnpm --filter whattowatch-web start
+ROOM_STORE=memory pnpm --filter whattowatch-match start
+pnpm --dir apps/web exec microfrontends proxy microfrontends.json --local-apps whattowatch-web whattowatch-match
 ```
 
-### Step 2: Install Dependencies
-```bash
-npm install
+Live rooms use Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` (or `KV_REST_API_URL`/`_TOKEN`) are set. Without them, `ROOM_STORE=memory` keeps rooms in memory for local use. In production with neither, the setup screen offers link mode only.
+
+Mobile:
+
+```sh
+cd apps/mobile
+EXPO_PUBLIC_API_URL=https://whattowatchxinny.vercel.app npx expo start
 ```
 
-### Step 3: Configure Environment Variables
-Create a `.env` file in the root directory:
-```env
-# Option 1: Bearer Token (Preferred)
-REACT_APP_TMDB_API_TOKEN=your_bearer_token_here
+## Checks
 
-# Option 2: API Key (Fallback)
-REACT_APP_TMDB_API_KEY=your_api_key_here
+```sh
+pnpm turbo run lint typecheck test build   # everything, including both mobile exports
+pnpm e2e                                    # Playwright: link mode and live mode, locally
+E2E_BASE_URL=https://whattowatchxinny.vercel.app pnpm e2e   # link mode against production
 ```
 
-### Step 4: Start the Development Server
-```bash
-npm start
-```
+## Notes
 
-The application will open in your browser at `http://localhost:3000`
+The TMDB credential only lives on the server. The browser and the app call `/api/tmdb/*` and `/match/api/*`, never TMDB directly.
 
-### Available Scripts
-- `npm start` - Runs the app in development mode
-- `npm run build` - Builds the app for production
-- `npm test` - Launches the test runner
-- `npm run eject` - Ejects from Create React App (one-way operation)
+Decisions and their reasons are logged in `docs/PROGRESS.md`. `REPORT.md` has what shipped and what didn't. `HUMAN_TODO.md` lists the steps that need your accounts.
 
-## 🔐 API Configuration
-
-To use the TMDB API:
-1. Get your API key or Bearer token from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
-2. Create a `.env` file in the root directory
-3. Add your credentials (Bearer token is preferred):
-   ```env
-   # Option 1: Bearer Token (Preferred)
-   REACT_APP_TMDB_API_TOKEN=your_bearer_token_here
-   
-   # Option 2: API Key (Fallback)
-   REACT_APP_TMDB_API_KEY=your_api_key_here
-   ```
-4. Restart the development server for changes to take effect
-
-**Note:** 
-- TMDB API is free and provides better search results and movie/TV show data
-- Bearer token authentication is preferred and more secure
-- If both are provided, Bearer token will be used
-
-## 🚧 Development Status
-
-This project is actively under development. Features and improvements are continuously being added.
-
----
-
-**Ready? Let's discover your next amazing watch! 🎥✨**
+This product uses the TMDB API but is not endorsed or certified by TMDB.

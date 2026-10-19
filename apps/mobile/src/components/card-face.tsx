@@ -19,7 +19,7 @@ function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: Shar
 
 export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boolean; x: SharedValue<number>; y: SharedValue<number> }) {
   const { t } = usePrefs();
-  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `★ ${formatRating(card.rating)}`].filter(Boolean).join("  ·  ");
+  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `${formatRating(card.rating)}/10`].filter(Boolean).join("  ·  ");
   return (
     <View style={{ flex: 1, borderWidth: 2, borderColor: colors.paper, backgroundColor: colors.shelfRaised, overflow: "hidden" }}>
       <Stamp text={t("deck.like")} tone={colors.label} x={x} y={y} side="like" />

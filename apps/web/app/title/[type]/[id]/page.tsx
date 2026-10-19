@@ -32,7 +32,7 @@ export default async function TitlePage(props: Props) {
           <Poster src={title.poster} title={title.title} lang={lang} eager />
         </div>
         <div className="min-w-0">
-          <TapeMeta parts={[title.year, t(lang, title.type === "movie" ? "common.movie" : "common.tv"), formatRuntime(title.runtime), seasons, formatRating(title.rating) && `★ ${formatRating(title.rating)}`]} />
+          <TapeMeta parts={[title.year, t(lang, title.type === "movie" ? "common.movie" : "common.tv"), formatRuntime(title.runtime), seasons, formatRating(title.rating) && `${formatRating(title.rating)}/10`]} />
           <h1 className="display mt-3 text-5xl break-words sm:text-6xl">{title.title}</h1>
           {title.tagline && <p className="mt-3 text-lg text-label italic">{title.tagline}</p>}
           <p className="mt-2 text-sm text-paper-dim">{title.genres.map((g) => g.name).join(" / ")}</p>

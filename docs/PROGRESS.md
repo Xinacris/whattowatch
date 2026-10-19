@@ -7,9 +7,9 @@
 - [x] 4. apps/match
 - [x] 5. Microfrontends
 - [x] 6. apps/mobile
-- [ ] 7. E2E
-- [ ] 8. Deploy
-- [ ] 9. Docs
+- [x] 7. E2E
+- [x] 8. Deploy
+- [x] 9. Docs
 
 ## Decisions
 
@@ -46,3 +46,6 @@
 - Phase 6: pnpm 12's default `minimumReleaseAge` rejected `expo-modules-cli@0.3.1` (published the same day, required by `expo@58.0.16` as `~0.3.1`). Added that exact version to `minimumReleaseAgeExclude`, next to the SDK 58 exact versions already listed.
 - Phase 6: deep links: scheme `whattowatch://match/<code>`; Android intent filter and iOS associated domain for `https://whattowatchxinny.vercel.app/match/*`. Universal-link verification files (AASA, assetlinks) need the store team id and signing cert, so they're in HUMAN_TODO.md.
 - Phase 6: mobile `build` task = `expo export` for iOS + Android, so `turbo run build` proves the bundles.
+- Phase 7: Playwright starts web, match (`ROOM_STORE=memory`) and the microfrontends proxy itself, or targets `E2E_BASE_URL`. Live-mode spec skips when remote. Found and fixed: link share now rewrites the URL before touching the clipboard, which can hang in headless and denied-permission browsers.
+- Phase 8: both projects deployed to production with `vercel deploy --prod` from the repo root (`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` per project, so the build sees the whole workspace). `TMDB_READ_TOKEN` set for production and preview via stdin; `ENABLE_EXPERIMENTAL_COREPACK=1` so Vercel uses pnpm 12. `.vercelignore` keeps every `.env*` out of uploads.
+- Phase 9: README rewritten (no emoji, real Playwright screenshots of production in `docs/`), REPORT.md and HUMAN_TODO.md written. Ratings show as `7.9/10` rather than a star glyph.
