@@ -44,12 +44,12 @@ export function LinkRoom({ payload }: { payload: LinkPayload }) {
 
   async function share() {
     const url = `${window.location.origin}/match/link?d=${encodeLink({ ...payload, voters: [...others, me] })}`;
+    window.history.replaceState(null, "", url); // first, so back/reload keeps the latest picks even if copying fails
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ url, title: "WhatToWatch" });
       else await navigator.clipboard.writeText(url);
       setCopied(true);
-    } catch { /* cancelled */ }
-    window.history.replaceState(null, "", url); // so back/reload keeps the latest picks
+    } catch { /* cancelled, or clipboard blocked: the address bar has the link */ }
   }
 
   const swiped = Object.keys(votes).length;
