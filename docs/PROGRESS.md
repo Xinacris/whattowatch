@@ -5,7 +5,7 @@
 - [x] 2. packages/core
 - [x] 3. apps/web
 - [x] 4. apps/match
-- [ ] 5. Microfrontends
+- [x] 5. Microfrontends
 - [ ] 6. apps/mobile
 - [ ] 7. E2E
 - [ ] 8. Deploy
@@ -37,3 +37,5 @@
 - Phase 4: link mode identifies voters by name, so when B sends a link back to A, A's earlier entry is replaced, not duplicated. Progress is kept in sessionStorage per seed, and sharing rewrites the URL, so back and reload keep your picks.
 - Phase 4: setup hides resold "channel" providers (Amazon Channel, Apple TV channel) and shows at most 18 services.
 - Phase 4: room, setup and link screens render client-only (`next/dynamic`, `ssr: false`) because their first render depends on the localStorage viewer.
+- Phase 5: projects `whattowatch-web` (root `apps/web`) and `whattowatch-match` (root `apps/match`) created via `vercel api`; group `whattowatch` created with `vercel mf create-group --non-interactive` (free tier, first 2 projects included; Vercel lists $2 per million routed requests). Local proxy verified on :3024 routing `/` to web and `/match/*` to match.
+- Phase 5: Upstash via `vercel integration add upstash/upstash-kv` stopped with `userActionRequired` (terms acceptance in browser). Logged in HUMAN_TODO.md; production live mode falls back to link mode.
