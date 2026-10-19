@@ -15,3 +15,5 @@ export * from "./tmdb/client";
 export * from "./tmdb/mappers";
 export * from "./tmdb/models";
 export type * from "./tmdb/raw";
+export * from "./api-client";
+export * from "./deck-session";

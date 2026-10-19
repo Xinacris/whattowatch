@@ -14,3 +14,12 @@ The CLI stopped at a terms screen:
 3. Check that `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_*`) exist on `whattowatch-match`: `vercel env ls --cwd apps/match`.
 4. Redeploy `whattowatch-match`. `/match/api/status` should then say `"live": true, "store": "redis"`.
 Until then, production live mode shows "use link mode", which works with no database.
+
+## 3. Mobile builds and store submission (EAS)
+Needs your Expo and Apple/Google accounts.
+1. `cd apps/mobile && npx eas-cli@latest login`
+2. `npx eas-cli@latest init`. This writes `extra.eas.projectId` into `app.json`; commit it.
+3. `npx eas-cli@latest build:configure`, then set `EXPO_PUBLIC_API_URL=https://whattowatchxinny.vercel.app` in `eas.json` under each build profile's `env`.
+4. Preview builds: `npx eas-cli@latest build --platform all --profile preview`
+5. Stores: `npx eas-cli@latest submit --platform ios` / `--platform android` (needs an Apple Developer account at $99/yr and a Google Play Console account at $25 once).
+6. Universal links (so the https share link opens the app): after the first iOS build, publish `apple-app-site-association` and Android `assetlinks.json` from `apps/web/public/.well-known/` with your Team ID and SHA-256 signing fingerprint (`npx eas-cli@latest credentials`), then redeploy web. The custom scheme `whattowatch://match/<code>` works without this.

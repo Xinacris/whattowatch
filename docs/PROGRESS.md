@@ -6,7 +6,7 @@
 - [x] 3. apps/web
 - [x] 4. apps/match
 - [x] 5. Microfrontends
-- [ ] 6. apps/mobile
+- [x] 6. apps/mobile
 - [ ] 7. E2E
 - [ ] 8. Deploy
 - [ ] 9. Docs
@@ -40,3 +40,9 @@
 - Phase 5: projects `whattowatch-web` (root `apps/web`) and `whattowatch-match` (root `apps/match`) created via `vercel api`; group `whattowatch` created with `vercel mf create-group --non-interactive` (free tier, first 2 projects included; Vercel lists $2 per million routed requests). Local proxy verified on :3024 routing `/` to web and `/match/*` to match.
 - Phase 5: Upstash via `vercel integration add upstash/upstash-kv` stopped with `userActionRequired` (terms acceptance in browser). Logged in HUMAN_TODO.md; production live mode falls back to link mode.
 - Phase 8 (early, so mobile and e2e have a real API): `whattowatch.vercel.app` refused with `Cannot add whattowatch.vercel.app since it's already assigned to another project. (409)`. It isn't in this account's project or alias lists, so it belongs to someone else. Production is `https://whattowatchxinny.vercel.app`, attached as a project domain on `whattowatch-web`.
+- Phase 6: Expo SDK 58 (RN 0.88, Reanimated 4.7, Gesture Handler 3.3 hook API), scaffolded with create-expo-app 5. Gestures use `usePanGesture`/`useTapGesture`/`useExclusiveGestures`, with physics constants from `@wtw/tokens` `motion`, the same ones the web card uses.
+- Phase 6: the API client (`createWtwApi`) and deck session (`createDeckSession`, a tiny observable) moved into `@wtw/core`. Web and mobile wrap them with `useSyncExternalStore`; zustand dropped.
+- Phase 6: React pinned to 19.3.0 everywhere (Expo SDK 58's version) so the hoisted tree has one React.
+- Phase 6: pnpm 12's default `minimumReleaseAge` rejected `expo-modules-cli@0.3.1` (published the same day, required by `expo@58.0.16` as `~0.3.1`). Added that exact version to `minimumReleaseAgeExclude`, next to the SDK 58 exact versions already listed.
+- Phase 6: deep links: scheme `whattowatch://match/<code>`; Android intent filter and iOS associated domain for `https://whattowatchxinny.vercel.app/match/*`. Universal-link verification files (AASA, assetlinks) need the store team id and signing cert, so they're in HUMAN_TODO.md.
+- Phase 6: mobile `build` task = `expo export` for iOS + Android, so `turbo run build` proves the bundles.
