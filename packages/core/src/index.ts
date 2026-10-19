@@ -1,3 +1,4 @@
+// Shared by web, match and mobile. Plain TypeScript, no React.
 export * from "./bytes";
 export * from "./deck";
 export * from "./filters";
