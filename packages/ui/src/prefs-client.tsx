@@ -3,8 +3,8 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { REGIONS, t, type Lang, type StringKey } from "@wtw/core";
 
-interface PrefsValue { lang: Lang; region: string }
-const PrefsContext = createContext<PrefsValue>({ lang: "en", region: "US" });
+interface PrefsValue { lang: Lang; region: string; services: number[] }
+const PrefsContext = createContext<PrefsValue>({ lang: "en", region: "US", services: [] });
 
 export function PrefsProvider({ value, children }: { value: PrefsValue; children: ReactNode }) {
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;
@@ -22,6 +22,11 @@ export function useT(): (key: StringKey, vars?: Record<string, string | number>)
 
 function setCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;
+}
+
+/** "Only on my services" remembers the picks for next time, same cookie mechanism as region and language. */
+export function saveServices(ids: number[]) {
+  setCookie("wtw_services", ids.join("."));
 }
 
 export function LangToggle() {

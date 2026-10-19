@@ -3,3 +3,4 @@ export * from "./prefs-client";
 export * from "./root";
 export * from "./shell";
 export * from "./providers";
+export * from "./search-box";

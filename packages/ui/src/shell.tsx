@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "@vercel/microfrontends/next/client";
 import { t, type Lang } from "@wtw/core";
+import { HeaderSearch } from "./header-search";
 import { LangToggle, RegionSelect } from "./prefs-client";
 
 export function Wordmark() {
@@ -14,14 +15,14 @@ export function Wordmark() {
 
 export function Header({ lang }: { lang: Lang }) {
   return (
-    <header className="border-b-2 border-rule">
+    <header className="relative border-b-2 border-rule">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
         <Wordmark />
         <nav className="label flex gap-5 text-paper-dim">
           <Link href="/match/new" className="hover:text-label">{t(lang, "nav.night")}</Link>
-          <Link href="/search" className="hover:text-label">{t(lang, "nav.search")}</Link>
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <HeaderSearch />
           <RegionSelect />
           <LangToggle />
         </div>

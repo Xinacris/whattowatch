@@ -6,14 +6,14 @@ import { PrefsProvider } from "./prefs-client";
 import { Shell } from "./shell";
 
 /** The full document for either app: tokens, fonts, prefs context, header and footer. */
-export function RootDocument({ lang, region, children }: { lang: Lang; region: string; children: ReactNode }) {
+export function RootDocument({ lang, region, services = [], children }: { lang: Lang; region: string; services?: number[]; children: ReactNode }) {
   return (
     <html lang={lang} className={fontVars} data-theme="dark">
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>
       <body>
-        <PrefsProvider value={{ lang, region }}>
+        <PrefsProvider value={{ lang, region, services }}>
           <Shell lang={lang}>{children}</Shell>
         </PrefsProvider>
       </body>
