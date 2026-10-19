@@ -83,3 +83,20 @@ Plan: core first (rounds, results, codec v2 with v1 decode, search params, room 
 - E2E: the live spec runs against a deployed Redis store with `E2E_LIVE=1`. (f) passes against production.
 - Both Vercel projects are not Git-connected: deploys are CLI-only (noted in REPORT.md). GitHub's default branch was already `main`.
 - Fixed while taking screenshots: the landing grid overflowed at 375px (implicit auto column); now `grid-cols-1` on phones.
+
+# v2.2
+
+Brief: `docs/V2_2_PROMPT.md`.
+
+Plan: Git connection first so every push gets a real Vercel build; then core (item keys, collection grouping, codec v3), the cached movie-meta loader, search and the collection page, the deck and results on every surface, the copy diet, then verify and merge.
+
+- [x] 1. Branch, brief, plan
+- [ ] 2. Vercel ↔ GitHub, READY preview from a push
+- [ ] 3. Core: item-key, collections grouping, codec v3 (tests)
+- [ ] 4. Cached movie-meta loader; search and deck use it
+- [ ] 5. Search, suggestions, collection page
+- [ ] 6. Deck (link, live, mobile) and results
+- [ ] 7. Copy diet, COPY.md, results kicker bug
+- [ ] 8. Verify, screenshots, merge, production READY
+
+## Decisions
