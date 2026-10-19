@@ -42,8 +42,8 @@ export default async function Landing() {
   const [items, ...rowLists] = await Promise.all([shelfItems(tmdbLang), ...rows.map((r) => rowItems(r, region, tmdbLang))]);
   return (
     <>
-      <section className="mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-10 sm:px-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:pt-16">
-        <div className="flex flex-col gap-5">
+      <section className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 pt-10 pb-10 sm:px-6 md:grid-cols-[1.6fr_1fr] md:gap-12 md:pt-16">
+        <div className="flex min-w-0 flex-col gap-5">
           <p className="label text-label">{t(lang, "landing.kicker")}</p>
           <h1 className="display text-[15vw] leading-[0.92] text-paper md:text-8xl">{t(lang, "landing.ask")}</h1>
           <p className="max-w-md text-lg text-paper-dim">{t(lang, "landing.askSub")}</p>

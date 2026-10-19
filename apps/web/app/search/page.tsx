@@ -25,7 +25,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <div className="max-w-2xl"><SearchBox key={f.q} initial={f.q} size="hero" /></div>
       {f.q && !searching && <p className="label mt-3 text-paper-dim">{t(lang, "search.short", { n: MIN_QUERY })}</p>}
-      <div className="mt-8 grid gap-8 md:grid-cols-[240px_1fr]">
+      <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[240px_1fr]">
         <SearchFilters key={searchHref({ ...f, page: 1 })} filters={f} providers={providers} />
         <div className="min-w-0">
           <h1 className="display text-4xl break-words sm:text-5xl">{heading}</h1>

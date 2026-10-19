@@ -7,15 +7,7 @@ The old `.env` with `REACT_APP_TMDB_API_KEY` / `REACT_APP_TMDB_API_TOKEN` was pu
 3. Redeploy both projects (see REPORT.md, Deploy).
 4. Optional: scrub history with `git filter-repo --path .env --invert-paths` and force-push `main`. Only after rotating; scrubbing doesn't un-leak a key.
 
-## 2. Turn on live rooms (Upstash Redis)
-The CLI stopped at a terms screen:
-1. Open https://vercel.com/xinacris-projects/~/integrations/accept-terms/upstash?source=cli and accept.
-2. `cd apps/match && vercel integration add upstash/upstash-kv --name wtw-rooms`
-3. Check that `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_*`) exist on `whattowatch-match`: `vercel env ls --cwd apps/match`.
-4. Redeploy `whattowatch-match`. `/match/api/status` should then say `"live": true, "store": "redis"`.
-Until then, production live mode shows "use link mode", which works with no database.
-
-## 3. Mobile builds and store submission (EAS)
+## 2. Mobile builds and store submission (EAS)
 Needs your Expo and Apple/Google accounts.
 1. `cd apps/mobile && npx eas-cli@latest login`
 2. `npx eas-cli@latest init`. This writes `extra.eas.projectId` into `app.json`; commit it.

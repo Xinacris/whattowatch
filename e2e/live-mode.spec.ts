@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { counter, finalSwipe, person, setUpNight, sitDown, swipeRun } from "./helpers";
 
-test.skip(Boolean(process.env.E2E_BASE_URL), "live rooms run against the local in-memory store");
+// Local by default (in-memory store). E2E_LIVE=1 also runs it against a deployed Redis store.
+test.skip(Boolean(process.env.E2E_BASE_URL) && !process.env.E2E_LIVE, "live rooms run locally unless E2E_LIVE=1");
 
 test("(f) live: one member under 30% deals five more for both; results only when both are through", async ({ browser }) => {
   const a = await person(browser);

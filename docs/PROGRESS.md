@@ -57,14 +57,29 @@ Brief: `docs/V2_1_PROMPT.md`.
 Plan: core first (rounds, results, codec v2 with v1 decode, search params, room deck rounds), then link mode, live mode, mobile, web search, landing, e2e, deploy, merge.
 
 - [x] 1. Read brief and current code, plan
-- [ ] 2. Core: rounds, results, codec v2 + v1, search, room rounds (tests)
-- [ ] 3. Match link mode: rounds, share screen, friend deck, results
-- [ ] 4. Match live mode: room rounds, waiting, results
-- [ ] 5. Mobile on the same core flow
-- [ ] 6. Web search: suggest, search box, filters, browse, logos, load more
-- [ ] 7. Landing: search hero and browse rows
-- [ ] 8. Playwright (a)–(f)
-- [ ] 9. Full checks, deploy, docs, push
+- [x] 2. Core: rounds, results, codec v2 + v1, search, room rounds (tests)
+- [x] 3. Match link mode: rounds, share screen, friend deck, results
+- [x] 4. Match live mode: room rounds, waiting, results
+- [x] 5. Mobile on the same core flow
+- [x] 6. Web search: suggest, search box, filters, browse, logos, load more
+- [x] 7. Landing: search hero and browse rows
+- [x] 8. Playwright (a)–(f)
+- [x] 9. Full checks, deploy, docs, push
 - [ ] 10. Fast-forward main
 
 ## v2.1 decisions
+- Core: `roundState` is derived from votes alone, never stored. Votes land in deck order (you always swipe the top card), so likes at each checkpoint are a prefix count, and undoing the 10th vote returns to round one by construction.
+- Core: when TMDB runs out before a round fills, the round is whatever exists and the rule uses it (`reason: "end"`). Seen-it on everything ends at the shelf's end, and the deck session also stops after 40 pages.
+- Codec v2: version byte 2, a results flag, filters, seed, the deck as zigzag delta varints in order (max 60), then per voter a name and 2 bits per card (yes/no/seen). 30 cards and 3 voters: 227 chars. v1 tokens still decode as `version: 1` with an empty deck.
+- Link roles: `linkStage(payload, votedHere)`. "Voted here" is a per-browser marker keyed by seed, so the initiator opening their own link sees "waiting for your friend". Voters are not identified by name any more; duplicate names are shown as "Ali (2)".
+- Live rooms: the server deals the deck from the same seeded discover pages (keys only, in a Redis `book` key); clients load cards by key through a new `cards` proxy route. Extensions are gated by `SET NX wtw:room:<code>:ext:<length>`. "Seen it" counts as done for "everyone has voted every card"; the 30% check uses yes/(yes+no).
+- Live results and "waiting for" use present members (polled in the last 15s), like the old match rule.
+- Removed: `MatchOverlay`, the running shortlist, `linkMatches`, room `matches`/`addMatches` (replaced by `matchesFromVoters` and room `results`, shown only when the room is done).
+- Search: the shared search box and header live in `packages/ui` rather than `apps/web`, because the header renders in both zones. Its suggestion and result links are full navigations for the same reason.
+- Search: browse mode applies every filter through TMDB discover; search mode filters TMDB search results by type/year/rating/genre/language, and runtime/services via each title's details (same cached call as deck cards). "Any service" = discover `with_watch_monetization_types=flatrate` in the region.
+- Search: services are stored in the `wtw_services` cookie next to `wtw_region`/`wtw_lang`, and passed through the existing prefs provider.
+- Search: provider logos for the first 20 results come with the page; the rest load in one request to `/api/tmdb/cards`.
+- Production: `whattowatch-match` had KV env vars but was deployed before they existed; the v2.1 redeploy turned `/match/api/status` to `live: true, store: redis`.
+- E2E: the live spec runs against a deployed Redis store with `E2E_LIVE=1`. (f) passes against production.
+- Both Vercel projects are not Git-connected: deploys are CLI-only (noted in REPORT.md). GitHub's default branch was already `main`.
+- Fixed while taking screenshots: the landing grid overflowed at 375px (implicit auto column); now `grid-cols-1` on phones.

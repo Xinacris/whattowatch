@@ -1,24 +1,26 @@
 # WhatToWatch
 
-Couch. Two people. Forty minutes of scrolling. This is for ending that.
+Something to watch, found fast. Search first: type a title, an actor or half a memory, and suggestions show up as you type. Or browse with filters that live in the URL: under 100 minutes, only on the services you pay for, old but gold, Turkish only.
 
-Everyone swipes the same stack of movies or shows. Right is yes, left is no, up is "seen it". The first title everybody says yes to is what you watch.
+When there's two of you, start a movie night. Everyone swipes the same stack: right is yes, left is no, up is "seen it". You find out what you agreed on at the end.
 
 **https://whattowatchxinny.vercel.app**
 
-![The landing page: headline, start button, join-with-code box and a shelf of this week's posters](docs/screenshot-landing.png)
+![The landing page: "What are we watching?" over a big search box, the movie-night door beside it, then shelves of posters](docs/screens/landing-1280.png)
 
 ## Two ways to play
 
-**Live room.** One person sets up the night: movies or series, which services you actually pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone joins and swipes at once. Phones check in every two seconds, and when the last yes lands, every screen says so.
+**Rounds.** Whoever starts votes 10 cards. If fewer than 30% are yeses, five more come, and so on up to 30. "Seen it" doesn't count; the next card takes its place. A tape counter always says where you are: `LIKED 2 / NEED 3 · CARD 7 OF 10`.
 
-**Link mode.** No server state at all. The deck is built from a seed in the URL, so everyone gets the same cards in the same order. You swipe, then send a link that carries your picks. They swipe the same deck and the overlap shows up on their screen. They can send it back, or pass it on to a third person.
+**Link mode.** No server state at all. When your rounds are done you get a link that carries the exact cards you voted on and your votes, and a screen that says how many you liked but not which. Your friend swipes exactly those cards, sees nothing until the last one, then gets the results: what you both said yes to, with where to watch it. They can send the results back, or add a third person to the same deck.
 
-A match means everyone currently in the room liked it. If anyone marks it "seen it", it's out. Keep swiping to collect more; the shortlist ranks them by which you agreed on first.
+**Live room.** One person sets up the night: movies or series, which services you pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone swipes the same deck at once. If anyone is under 30% when everyone is through, the room deals five more for all. Results show up for everyone once the last person finishes.
+
+A title makes the results when everyone liked it. If anyone marked it "seen it", it's out.
 
 ![The swipe deck mid-drag, card tilted with a YES stamp](docs/screenshot-deck.png)
 
-There's also plain search with where-to-watch per country (stream, rent, buy), detected from where you are and changeable from the header.
+Where-to-watch is per country (stream, rent, buy), detected from where you are and changeable from the header.
 
 No accounts. You're an anonymous device id plus whatever name you type.
 
@@ -26,10 +28,10 @@ No accounts. You're an anonymous device id plus whatever name you type.
 
 | Path | What it is |
 | --- | --- |
-| `apps/web` | Next.js. Landing, search, title, person and collection pages, and the TMDB proxy at `/api/tmdb/*`. Default microfrontend; owns `microfrontends.json`. |
-| `apps/match` | Next.js, served under `/match`. Setup, lobby, deck, match screen, shortlist, room API. |
+| `apps/web` | Next.js. Landing, search with filters, title, person and collection pages, `/api/suggest`, and the TMDB proxy at `/api/tmdb/*`. Default microfrontend; owns `microfrontends.json`. |
+| `apps/match` | Next.js, served under `/match`. Setup, lobby, rounds, share screen, results, room API. |
 | `apps/mobile` | Expo Router app with the same flow. Talks to the deployed web API, never to TMDB. |
-| `packages/core` | Plain TypeScript, no React. TMDB client and mappers, deck builder, seeded shuffle, match rule, link codec, rooms, EN/TR strings. Unit tested. |
+| `packages/core` | Plain TypeScript, no React. TMDB client and mappers, deck builder, seeded shuffle, round rule, results, link codec, search params, rooms, EN/TR strings. Unit tested. |
 | `packages/tokens` | Colours, type, spacing, swipe physics. Read by Tailwind on the web and by StyleSheet on mobile. |
 | `packages/ui` | Shared web pieces for both Next apps: shell, poster, provider list, server-only TMDB access. |
 | `packages/config` | Shared tsconfig and ESLint. |
@@ -54,7 +56,7 @@ ROOM_STORE=memory pnpm --filter whattowatch-match start
 pnpm --dir apps/web exec microfrontends proxy microfrontends.json --local-apps whattowatch-web whattowatch-match
 ```
 
-Live rooms use Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` (or `KV_REST_API_URL`/`_TOKEN`) are set. Without them, `ROOM_STORE=memory` keeps rooms in memory for local use. In production with neither, the setup screen offers link mode only.
+Live rooms use Upstash Redis (on in production) when `UPSTASH_REDIS_REST_URL`/`_TOKEN` (or `KV_REST_API_URL`/`_TOKEN`) are set. Without them, `ROOM_STORE=memory` keeps rooms in memory for local use. In production with neither, the setup screen offers link mode only.
 
 Mobile:
 
@@ -67,8 +69,8 @@ EXPO_PUBLIC_API_URL=https://whattowatchxinny.vercel.app npx expo start
 
 ```sh
 pnpm turbo run lint typecheck test build   # everything, including both mobile exports
-pnpm e2e                                    # Playwright: link mode and live mode, locally
-E2E_BASE_URL=https://whattowatchxinny.vercel.app pnpm e2e   # link mode against production
+pnpm e2e                                    # Playwright: rounds, results, live rooms and search, locally
+E2E_BASE_URL=https://whattowatchxinny.vercel.app pnpm e2e   # the same against production (add E2E_LIVE=1 for live rooms)
 ```
 
 ## Notes
