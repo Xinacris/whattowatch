@@ -65,7 +65,7 @@ Plan: core first (rounds, results, codec v2 with v1 decode, search params, room 
 - [x] 7. Landing: search hero and browse rows
 - [x] 8. Playwright (a)–(f)
 - [x] 9. Full checks, deploy, docs, push
-- [ ] 10. Fast-forward main
+- [x] 10. Fast-forward main
 
 ## v2.1 decisions
 - Core: `roundState` is derived from votes alone, never stored. Votes land in deck order (you always swipe the top card), so likes at each checkpoint are a prefix count, and undoing the 10th vote returns to round one by construction.
