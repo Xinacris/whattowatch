@@ -177,7 +177,7 @@ const en = {
   "round.more": "Not enough yeses yet. Five more on the pile.",
   "round.roomMore": "Somebody's being picky. Five more for everyone.",
   "share.title": "You said yes to {n}.",
-  "share.blind": "Which ones stays between you and the tape.",
+  "share.blind": "Which ones? That stays between you and the tape.",
   "share.picky": "Picky tonight. Sending what you've got.",
   "share.shelfEnd": "That's the whole shelf for these filters, so this is the stack.",
   "share.line": "Send it over. They swipe the same stack, and the results land on their screen.",

@@ -10,7 +10,7 @@ import { ResultsScreen } from "./results-screen";
 import { RoundCounter } from "./round-counter";
 
 /** Everyone after the initiator: a fixed deck, no peeking, results when the last card goes. */
-export function LinkFriend({ payload, name }: { payload: LinkPayload; name: string }) {
+export function LinkFriend({ payload, name, intro }: { payload: LinkPayload; name: string; intro: string }) {
   useLinkDeck(payload, "friend");
   const state = useDeck();
   const left = remaining(state).length;
@@ -18,7 +18,12 @@ export function LinkFriend({ payload, name }: { payload: LinkPayload; name: stri
 
   if (!finished) {
     const total = state.done ? state.cards.length : Math.max(state.cards.length, payload.deck.length);
-    return <Deck onVote={() => {}} onUndo={() => {}} aside={<RoundCounter card={Math.min(total - left + 1, total)} of={total} />} />;
+    return (
+      <>
+        <p className="label mx-auto max-w-md px-4 pt-6 text-label">{intro}</p>
+        <Deck onVote={() => {}} onUndo={() => {}} aside={<RoundCounter card={Math.min(total - left + 1, total)} of={total} />} />
+      </>
+    );
   }
   const deck = linkDeck(payload, state.cards.map((c) => c.key));
   const voters = [...payload.voters, picksOf(name, deck, state.votes)];

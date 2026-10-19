@@ -28,12 +28,7 @@ export function LinkRoom({ payload }: { payload: LinkPayload }) {
     case "start":
       return <LinkInitiator payload={payload} name={name ?? ""} />;
     case "swipe":
-      return (
-        <>
-          <p className="label mx-auto max-w-md px-4 pt-6 text-label">{t("link.yourTurn", { names: listNames(lang, names) })}</p>
-          <LinkFriend payload={payload} name={name ?? ""} />
-        </>
-      );
+      return <LinkFriend payload={payload} name={name ?? ""} intro={t("link.yourTurn", { names: listNames(lang, names) })} />;
     case "waiting":
       return (
         <>

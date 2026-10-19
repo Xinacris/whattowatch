@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { lang, region } = await getPrefs();
-  return <RootDocument lang={lang} region={region}>{children}</RootDocument>;
+  const { lang, region, services } = await getPrefs();
+  return <RootDocument lang={lang} region={region} services={services}>{children}</RootDocument>;
 }
