@@ -4,7 +4,7 @@
 - [x] 1. Monorepo skeleton
 - [x] 2. packages/core
 - [x] 3. apps/web
-- [ ] 4. apps/match
+- [x] 4. apps/match
 - [ ] 5. Microfrontends
 - [ ] 6. apps/mobile
 - [ ] 7. E2E
@@ -31,3 +31,9 @@
 - Phase 3: posters use plain `<img>` against TMDB's pre-sized CDN images instead of `next/image`, to stay off the Hobby image-optimization quota.
 - Phase 3: Tailwind 4 theme reads CSS variables generated from `@wtw/tokens` (`tokensCss()`), the same source the mobile StyleSheet uses.
 - Phase 3: region = `?region=` > `wtw_region` cookie > `x-vercel-ip-country` > Accept-Language > US. Language = `wtw_lang` cookie > Accept-Language.
+- Phase 4: room API is POST-only (`/match/api/rooms`, `/match/api/rooms/:code/{sync,vote,leave}`) with the anonymous viewer in the body. `sync` doubles as heartbeat and as the place matches get recorded, so any member's poll settles a match.
+- Phase 4: Redis layout is four keys per room (meta string + members/votes/matches hashes), all expiring at createdAt+12h. Matches use HSETNX: two simultaneous last likes record one match.
+- Phase 4: store selection = Upstash/KV env > memory (only when NODE_ENV != production or ROOM_STORE=memory) > none. With none, `/match/new` hides live mode and says to use link mode.
+- Phase 4: link mode identifies voters by name, so when B sends a link back to A, A's earlier entry is replaced, not duplicated. Progress is kept in sessionStorage per seed, and sharing rewrites the URL, so back and reload keep your picks.
+- Phase 4: setup hides resold "channel" providers (Amazon Channel, Apple TV channel) and shows at most 18 services.
+- Phase 4: room, setup and link screens render client-only (`next/dynamic`, `ssr: false`) because their first render depends on the localStorage viewer.

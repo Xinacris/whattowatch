@@ -1,1 +1,5 @@
-export default function Page() { return <main>match</main>; }
+import { redirect } from "next/navigation";
+
+export default function MatchIndex() {
+  redirect("/match/new");
+}

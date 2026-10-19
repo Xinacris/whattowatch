@@ -18,6 +18,6 @@ export function Poster({ src, title, lang, className = "", eager = false }: Post
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element -- TMDB already serves sized images; no optimizer quota needed
-    <img src={src} alt={title} loading={eager ? "eager" : "lazy"} className={`aspect-[2/3] w-full border-2 border-rule bg-shelf-high object-cover ${className}`} />
+    <img src={src} alt={title} draggable={false} loading={eager ? "eager" : "lazy"} className={`aspect-[2/3] w-full border-2 border-rule bg-shelf-high object-cover ${className}`} />
   );
 }

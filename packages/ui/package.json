@@ -13,9 +13,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@vercel/microfrontends": "2.4.1",
     "@wtw/core": "workspace:*",
     "@wtw/tokens": "workspace:*",
-    "@vercel/microfrontends": "2.4.1",
     "server-only": "0.0.1"
   },
   "peerDependencies": {
@@ -24,8 +24,9 @@
   },
   "devDependencies": {
     "@types/react": "19.3.0",
-    "@wtw/config": "workspace:*",
     "@types/react-dom": "19.2.3",
+    "@wtw/config": "workspace:*",
+    "eslint-config-next": "16.4.2",
     "next": "16.4.2",
     "react": "19.3.1"
   }

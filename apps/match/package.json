@@ -12,13 +12,15 @@
     "test": "echo 'logic is tested in packages/core'"
   },
   "dependencies": {
+    "@upstash/redis": "1.39.0",
     "@vercel/microfrontends": "2.4.1",
     "@wtw/core": "workspace:*",
     "@wtw/tokens": "workspace:*",
     "@wtw/ui": "workspace:*",
     "next": "16.4.2",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
