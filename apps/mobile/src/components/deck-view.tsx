@@ -7,9 +7,9 @@ import { usePrefs } from "@/lib/prefs";
 import { colors, fontSize, s, space } from "@/lib/theme";
 import { CardFace } from "./card-face";
 import { SwipeCard, type SwipeHandle } from "./swipe-card";
-import { Btn } from "./ui";
+import { Btn, Sticker } from "./ui";
 
-export function DeckView({ onVote, onUndo, footer, exhausted, onLoosen }: { onVote(key: string, vote: Vote): void; onUndo(key: string): void; footer?: ReactNode; exhausted?: ReactNode; onLoosen(): void }) {
+export function DeckView({ onVote, onUndo, header, banner, exhausted, onLoosen }: { onVote(key: string, vote: Vote): void; onUndo(key: string): void; header?: ReactNode; banner?: string | null; exhausted?: ReactNode; onLoosen(): void }) {
   const { t } = usePrefs();
   const state = useDeck();
   const left = remaining(state);
@@ -23,6 +23,8 @@ export function DeckView({ onVote, onUndo, footer, exhausted, onLoosen }: { onVo
 
   return (
     <View style={{ flex: 1, padding: space[4], gap: space[3] }}>
+      {header}
+      {banner && <Sticker text={banner} rotate={-1} />}
       <View style={{ flex: 1 }}>
         {left[1] && <View style={{ position: "absolute", inset: 0, opacity: 0.6, transform: [{ rotate: "2deg" }, { scale: 0.96 }] }} pointerEvents="none"><CardFace card={left[1]} flipped={false} x={still} y={still} /></View>}
         {top ? (
@@ -47,7 +49,6 @@ export function DeckView({ onVote, onUndo, footer, exhausted, onLoosen }: { onVo
         <Btn tone="label" title={`${t("deck.like")} →`} disabled={!top} onPress={() => card.current?.fling("like")} style={{ flex: 1 }} />
       </View>
       <Btn title={`↶ ${t("deck.undo")}`} disabled={!state.last} onPress={undo} style={{ borderWidth: 0, alignSelf: "flex-start", paddingHorizontal: 0, paddingVertical: 4 }} />
-      {footer}
     </View>
   );
 }

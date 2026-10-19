@@ -1,66 +1,42 @@
 import { useEffect, useMemo, useState } from "react";
-import { Share, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { decodeLink, encodeLink, linkMatches, listNames, type LinkVoter, type TitleKey } from "@wtw/core";
-import { DeckView } from "@/components/deck-view";
-import { MatchSheet } from "@/components/match-sheet";
+import { decodeLink, linkStage, listNames, matchesFromVoters, voterLabels, type LinkStage } from "@wtw/core";
+import { Friend, Initiator, swap } from "@/components/link-flows";
 import { NameGate } from "@/components/name-gate";
-import { Shortlist } from "@/components/shortlist";
+import { ResultsView } from "@/components/results-view";
+import { ShareView } from "@/components/share-view";
 import { Btn, Notice } from "@/components/ui";
-import { deck, useDeck } from "@/lib/deck";
 import { API_URL } from "@/lib/env";
-import { useCards, useViewer } from "@/lib/hooks";
+import { useViewer } from "@/lib/hooks";
+import { votedHere } from "@/lib/link-store";
 import { usePrefs } from "@/lib/prefs";
 import { colors, s, space } from "@/lib/theme";
-
-const same = (a: string, b: string) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
 
 export default function LinkRoom() {
   const { t, lang } = usePrefs();
   const { d } = useLocalSearchParams<{ d: string }>();
   const payload = useMemo(() => (d ? decodeLink(d) : null), [d]);
   const [viewer, setViewer] = useViewer();
-  const { votes, cards: loaded } = useDeck();
-  const [showing, setShowing] = useState<TitleKey | null>(null);
-  const [list, setList] = useState(false);
+  const [stage, setStage] = useState<LinkStage | null>(null);
+  useEffect(() => { if (payload) void votedHere(payload.seed).then((v) => setStage(linkStage(payload, v))); }, [payload]);
 
-  useEffect(() => { if (payload && viewer?.name) deck.start(payload.filters, payload.seed, lang); }, [payload, viewer?.name, lang]);
-  const name = viewer?.name ?? "";
-  const others = useMemo(() => payload?.voters.filter((v) => !same(v.name, name)) ?? [], [payload, name]);
-  const me: LinkVoter = useMemo(() => ({
-    name,
-    likes: Object.entries(votes).filter(([, v]) => v === "like").map(([k]) => k as TitleKey),
-    seen: Object.entries(votes).filter(([, v]) => v === "seen").map(([k]) => k as TitleKey),
-  }), [votes, name]);
-  const matches = useMemo(() => (others.length ? linkMatches([...others, me], loaded.map((c) => c.key)) : []), [others, me, loaded]);
-  const cards = useCards(matches);
-  const matchCard = cards.find((c) => c.key === showing) ?? null;
-
-  if (!payload) return <View style={s.screen}><Notice title={t("link.broken")} action={<Btn tone="label" title={t("landing.start")} onPress={() => router.replace("/new")} />} /></View>;
-  if (!viewer) return <View style={s.screen} />;
-  const names = listNames(lang, others.map((o) => o.name));
-  if (!viewer.name) return <View style={s.screen}><NameGate title={others.length ? t("link.yourTurn", { names }) : t("setup.title")} initial="" onDone={(n) => setViewer({ ...viewer, name: n })} /></View>;
-
-  const share = () => void Share.share({ message: `${API_URL}/match/link?d=${encodeLink({ ...payload, voters: [...others, me] })}` });
-  const onVote = (key: string, vote: string) => {
-    if (vote !== "like" || !others.length) return;
-    if (linkMatches([...others, { ...me, likes: [...me.likes, key as TitleKey] }]).includes(key as TitleKey)) setShowing(key as TitleKey);
-  };
-
+  const newNight = <Btn tone="label" title={t("landing.start")} onPress={() => router.replace("/new")} />;
+  if (!payload) return <View style={s.screen}><Notice title={t("link.broken")} action={newNight} /></View>;
+  if (!viewer || !stage) return <View style={s.screen} />;
+  const names = voterLabels(payload.voters.map((v) => v.name));
+  if ((stage === "start" || stage === "swipe") && !viewer.name) {
+    return <View style={s.screen}><NameGate title={stage === "swipe" ? t("link.yourTurn", { names: listNames(lang, names) }) : t("setup.title")} initial="" onDone={(n) => setViewer({ ...viewer, name: n })} /></View>;
+  }
+  const here = `${API_URL}/match/link?d=${d}`;
   return (
     <View style={s.screen}>
-      {others.length > 0 && <Text style={[s.label, { color: colors.label, paddingHorizontal: space[4], paddingTop: space[3] }]}>{t("link.yourTurn", { names })}</Text>}
-      {list ? <Shortlist cards={cards} onBack={() => setList(false)} onNew={() => router.replace("/new")} /> : (
-        <DeckView onVote={onVote} onUndo={() => {}} onLoosen={() => router.replace("/new")}
-          exhausted={<Text style={[s.body, s.dim]}>{t("link.done")}</Text>}
-          footer={
-            <View style={s.row}>
-              <Btn tone="label" title={t("link.share")} disabled={!Object.keys(votes).length} onPress={share} style={{ flex: 1 }} />
-              {others.length > 0 && <Btn title={t("deck.matchesSoFar", { n: matches.length })} disabled={!matches.length} onPress={() => setList(true)} />}
-            </View>
-          } />
-      )}
-      {matchCard && <MatchSheet card={matchCard} onKeepGoing={() => setShowing(null)} onSettle={() => { setShowing(null); setList(true); }} />}
+      {stage === "start" && <Initiator payload={payload} name={viewer.name} />}
+      {stage === "swipe" && <Text style={[s.label, { color: colors.label, paddingHorizontal: space[4], paddingTop: space[3] }]}>{t("link.yourTurn", { names: listNames(lang, names) })}</Text>}
+      {stage === "swipe" && <Friend payload={payload} name={viewer.name} />}
+      {stage === "waiting" && <><Notice title={t("waiting.title")} body={t("waiting.body")} /><ShareView liked={null} url={here} /></>}
+      {stage === "results" && <ResultsView results={matchesFromVoters(payload.deck, payload.voters)} names={names} addPerson={payload.finished ? null : here} onSwap={swap(payload)} onLoosen={() => router.replace("/new")} />}
+      {stage === "solo" && <Notice title={t("results.solo")} action={newNight} />}
     </View>
   );
 }

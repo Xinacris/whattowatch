@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ScrollView, Text } from "react-native";
 import { router } from "expo-router";
-import { encodeLink, formatRuntime, GENRES, genreName, makeSeed, MAX_GENRES, sanitizeFilters, type Era, type Kind, type Provider } from "@wtw/core";
+import { formatRuntime, freshLink, GENRES, genreName, makeSeed, MAX_GENRES, sanitizeFilters, type Era, type Kind, type Provider } from "@wtw/core";
 import { Btn, Chip, Field, Section } from "@/components/ui";
 import { api } from "@/lib/api";
 import { usePrefs } from "@/lib/prefs";
@@ -34,7 +34,7 @@ export default function Setup() {
     if (!name.trim()) { setError(t("setup.nameMissing")); return; }
     await setViewerName(name);
     const filters = sanitizeFilters({ kind, providers: services, genres, maxRuntime: runtime || null, era, region });
-    if (mode === "link") { router.push({ pathname: "/match/link", params: { d: encodeLink({ filters, seed: makeSeed(), voters: [] }) } }); return; }
+    if (mode === "link") { router.push({ pathname: "/match/link", params: { d: freshLink(filters, makeSeed()) } }); return; }
     setBusy(true);
     try {
       const room = await api.createRoom(await getViewer(), filters);
