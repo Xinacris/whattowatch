@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/microfrontends.json",
   "applications": {
     "whattowatch-web": {
-      "development": { "local": 3000, "fallback": "whattowatch.vercel.app" }
+      "development": { "local": 3000, "fallback": "whattowatchxinny.vercel.app" }
     },
     "whattowatch-match": {
       "routing": [{ "group": "match", "paths": ["/match", "/match/:path*"] }],
