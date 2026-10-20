@@ -4,12 +4,12 @@ export function movie(id: number, extra: Partial<RawListItem> = {}): RawListItem
   return { id, title: `Movie ${id}`, release_date: "2020-01-01", poster_path: `/p${id}.jpg`, vote_average: 7, vote_count: 500, ...extra };
 }
 
-export function show(id: number, extra: Partial<RawListItem> = {}): RawListItem {
+function show(id: number, extra: Partial<RawListItem> = {}): RawListItem {
   return { id, name: `Show ${id}`, first_air_date: "2021-01-01", poster_path: `/s${id}.jpg`, vote_average: 8, vote_count: 900, ...extra };
 }
 
 /** Discover pages of 20, `total` items per type. Details derived from the id. */
-export interface FakeOpts {
+interface FakeOpts {
   runtime?: (id: number) => number;
   failIds?: number[];
   /** movie id -> series id; each series' parts are the movies mapped to it, named "Series <id>". */

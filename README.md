@@ -8,9 +8,9 @@ When there's two of you, start a movie night. Everyone swipes the same stack: ri
 
 **https://whattowatchxinny.vercel.app**
 
-![The landing page: "What are we watching?" over a big search box, the movie-night door beside it, then shelves of posters](docs/screens/landing-1280.png)
+![The landing page: "What are we watching?" over a big search box, the movie-night door beside it, then shelves of posters](docs/landing.webp)
 
-![Search for "shrek": one Shrek Collection card with a 4 FILMS sticker, then the specials and spin-offs](docs/screens/search-shrek-1280.png)
+![Search for "hobbit": one Hobbit Collection card with a 3 FILMS sticker and an "Inside: The Battle of the Five Armies" label, then other Hobbit titles](docs/search-hobbit.webp)
 
 ## Two ways to play
 
@@ -22,7 +22,7 @@ When there's two of you, start a movie night. Everyone swipes the same stack: ri
 
 A title makes the results when everyone liked it. If anyone marked it "seen it", it's out. Series are one card in the deck too: tap it to see what's in the box, and one vote counts for the whole series.
 
-![The swipe deck mid-drag, card tilted with a YES stamp](docs/screenshot-deck.png)
+![The swipe deck: the Zootopia Collection as one card, labelled "New: Zootopia 2", under a LIKED 0 / 5 · CARD 1 OF 15 counter](docs/deck.webp)
 
 Where-to-watch is per country (stream, rent, buy), detected from where you are and changeable from the header.
 
@@ -75,13 +75,14 @@ EXPO_PUBLIC_API_URL=https://whattowatchxinny.vercel.app npx expo start
 pnpm turbo run lint typecheck test build   # everything, including both mobile exports
 pnpm e2e                                    # Playwright: rounds, results, live rooms and search, locally
 E2E_BASE_URL=https://whattowatchxinny.vercel.app pnpm e2e   # the same against production (add E2E_LIVE=1 for live rooms)
-SCREENS=1 pnpm e2e e2e/screens.spec.ts                      # retake docs/screens
+SCREENS=1 pnpm e2e e2e/screens.spec.ts                      # screenshots into .screens/ (add README=1 to refresh docs/*.webp)
+npx knip                                                    # unused files, exports and dependencies
 ```
 
 ## Notes
 
 The TMDB credential only lives on the server. The browser and the app call `/api/tmdb/*` and `/match/api/*`, never TMDB directly.
 
-Decisions and their reasons are logged in `docs/PROGRESS.md`. `REPORT.md` has what shipped and what didn't. `HUMAN_TODO.md` lists the steps that need your accounts.
+Open work, including the steps that need your Expo, Apple or TMDB accounts, is tracked as [GitHub issues labelled `todo`](https://github.com/Xinacris/whattowatch/issues?q=is%3Aopen+label%3Atodo).
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.

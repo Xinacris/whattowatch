@@ -3,7 +3,7 @@ import { border, colors, fontSize, radius, space } from "@wtw/tokens";
 
 // Tokens come from @wtw/tokens, the same source as the web's Tailwind theme.
 export const font = { display: "Anton_400Regular", mono: "IBMPlexMono_400Regular", monoBold: "IBMPlexMono_700Bold" } as const;
-export { colors, fontSize, radius, space };
+export { colors, fontSize, space };
 
 export const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.shelf },

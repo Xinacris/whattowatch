@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Local server logs
 *.log
+
+# AI agent / skill files: kept locally, never committed
+.agents/
+.claude/
+**/.claude/
+skills-lock.json

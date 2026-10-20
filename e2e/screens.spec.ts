@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { finalSwipe, sitDown, swipe, swipeRun, topCard } from "./helpers";
 
@@ -17,6 +18,27 @@ async function at(browser: Browser, width: number, lang: "en" | "tr", region = "
 }
 
 const shot = (p: Page, name: string, width: number) => p.screenshot({ path: `${OUT}/${name}-${width}.png` });
+
+/** README images: a screenshot re-encoded as WebP by the browser itself, so they stay small with no image tooling. */
+async function readmeShot(p: Page, path: string) {
+  const png = (await p.screenshot()).toString("base64");
+  const blank = await p.context().newPage();
+  const webp = await blank.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const canvas = Object.assign(document.createElement("canvas"), { width: img.width, height: img.height });
+    canvas.getContext("2d")?.drawImage(img, 0, 0);
+    const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/webp", 0.8));
+    const bytes = new Uint8Array(await (blob as Blob).arrayBuffer());
+    let bin = "";
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin);
+  }, png);
+  await blank.close();
+  mkdirSync("docs", { recursive: true });
+  writeFileSync(path, Buffer.from(webp, "base64"));
+}
 
 /** Swipe through a deck, shooting the front (and back, when asked) of the series cards named in `want`. */
 async function seriesShots(p: Page, width: number, want: Record<string, { name: string; back: boolean }>) {
@@ -79,15 +101,19 @@ for (const width of [375, 1280]) {
     await shot(c, "share-5th-yes", width);
 
     if (process.env.README && width === 1280) {
-      for (const [page, path] of [[en, "/"], [en, "/search?q=hobbit"]] as const) {
-        await page.goto(path);
-        await page.waitForLoadState("networkidle");
-        await page.screenshot({ path: `docs/${path === "/" ? "landing" : "search-hobbit"}.png` });
-      }
-      await anim.goto(`/match/link?d=${ANIMATION}`);
-      await expect(anim.getByRole("group").first()).toBeVisible();
-      await anim.waitForLoadState("networkidle");
-      await anim.screenshot({ path: "docs/deck.png" });
+      await en.goto("/");
+      await en.waitForLoadState("networkidle");
+      await readmeShot(en, "docs/landing.webp");
+      await en.goto("/search?q=hobbit");
+      await expect(en.getByTestId("search-result").first()).toBeVisible();
+      await en.waitForLoadState("networkidle");
+      await readmeShot(en, "docs/search-hobbit.webp");
+      const deck = await at(browser, width, "en");
+      await deck.goto(`/match/link?d=${ANIMATION}`);
+      await sitDown(deck, "Ayşe");
+      await expect(deck.getByTestId("series-hit")).toBeVisible();
+      await deck.waitForLoadState("networkidle");
+      await readmeShot(deck, "docs/deck.webp");
     }
   });
 }
