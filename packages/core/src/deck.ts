@@ -2,7 +2,9 @@ import { kindsOf, type RoomFilters } from "./filters";
 import { genreIdsFor } from "./genres";
 import { seededShuffle } from "./random";
 import type { TmdbClient } from "./tmdb/client";
-import { deckCard } from "./tmdb/api";
+import { collectionDeckCard, seriesOfCard } from "./collections";
+import { mapLimit, type MetaLoader } from "./movie-meta";
+import { createMetaLoader, deckCard, groupList } from "./tmdb/api";
 import { toSummaries } from "./tmdb/mappers";
 import type { DeckCard, MediaType, TitleKey, TitleSummary } from "./tmdb/models";
 import type { RawPage } from "./tmdb/raw";
@@ -64,23 +66,37 @@ export interface DeckPage { page: number; cards: DeckCard[]; done: boolean }
  * One page of the shared deck. Deterministic for (filters, seed, page) as long as TMDB's
  * ordering holds, and matching uses title keys rather than positions so drift is harmless.
  */
-export async function buildDeckPage(c: TmdbClient, f: RoomFilters, seed: string, page: number, language: string): Promise<DeckPage> {
+export async function buildDeckPage(c: TmdbClient, f: RoomFilters, seed: string, page: number, language: string, meta?: MetaLoader): Promise<DeckPage> {
   const queries = discoverQueries(f, page);
   if (!queries.length) return { page, cards: [], done: true };
   const pages = await Promise.all(queries.map((q) => c.get<RawPage>(`/discover/${q.type}`, q.params)));
   const lists = pages.map((p, i) => toSummaries(p.results, queries[i]?.type));
   const done = pages.every((p) => p.page >= p.total_pages);
   const order = arrangeDeckPage(lists, seed, page);
-  const settled = await Promise.allSettled(order.map((s) => deckCard(c, s.type, s.id, language, f.region, f.providers)));
+  const settled = await mapLimit(order, 8, (s) => deckCard(c, s.type, s.id, language, f.region, f.providers));
   const cards = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  // Runtime is checked per part, before grouping: a series is never "too long" for adding up.
   const fits = f.maxRuntime ? cards.filter((card) => !card.runtime || card.runtime <= (f.maxRuntime as number)) : cards;
-  return { page, cards: fits, done };
+  const items = await groupList(c, fits, language, meta ?? createMetaLoader(c, language, f.region), (card) => card.partOf ?? null);
+  return { page, cards: items.map((i) => (i.kind === "title" ? i.item : collectionDeckCard(i.summary, f.providers))), done };
 }
 
-/** Appends a fetched page to what the client already holds, never repeating a title. */
+/**
+ * Appends a fetched page to what the client already holds, never repeating a title, and never a
+ * series: once Shrek (the series, or one lone part) is in the deck, later parts stay out.
+ */
 export function appendPage(deck: DeckCard[], next: DeckCard[]): DeckCard[] {
-  const have = new Set(deck.map((c) => c.key));
-  return [...deck, ...next.filter((c) => !have.has(c.key))];
+  const have = new Set<string>(deck.map((c) => c.key));
+  const series = new Set(deck.map(seriesOfCard));
+  const out = [...deck];
+  for (const card of next) {
+    const s = seriesOfCard(card);
+    if (have.has(card.key) || (s !== null && series.has(s))) continue;
+    have.add(card.key);
+    series.add(s);
+    out.push(card);
+  }
+  return out;
 }
 
 /** Fetch the next page when this few cards are left unswiped. */

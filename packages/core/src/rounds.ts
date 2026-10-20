@@ -1,5 +1,5 @@
 import type { Vote } from "./match";
-import type { TitleKey } from "./tmdb/models";
+import type { ItemKey } from "./item-key";
 
 // The round rule, in one place. Web link mode, live rooms and mobile all read these.
 export const ROUND_FIRST = 10;
@@ -26,7 +26,7 @@ export const likesNeeded = (voted: number) => Math.ceil(voted * LIKE_RATIO - 1e-
 export const meetsRatio = (liked: number, voted: number) => voted > 0 && liked >= likesNeeded(voted);
 
 /** Ordered keys that got a yes or a no. This is what the friend swipes. */
-export function votedKeys(deck: readonly TitleKey[], votes: Readonly<Record<string, Vote>>): TitleKey[] {
+export function votedKeys(deck: readonly ItemKey[], votes: Readonly<Record<string, Vote>>): ItemKey[] {
   return deck.filter((k) => votes[k] === "like" || votes[k] === "nope");
 }
 
@@ -41,7 +41,7 @@ function targetFor(likedAt: (n: number) => number, voted: number): number {
  * Where the initiator is. Derived from votes alone, so undo just works: undoing the 10th vote
  * puts you back in round one. `deckDone` = TMDB has nothing more; then the round is what exists.
  */
-export function roundState(votes: Readonly<Record<string, Vote>>, deck: readonly TitleKey[], deckDone = false): RoundState {
+export function roundState(votes: Readonly<Record<string, Vote>>, deck: readonly ItemKey[], deckDone = false): RoundState {
   const keys = votedKeys(deck, votes);
   const voted = keys.length;
   const likedAt = (n: number) => keys.slice(0, n).filter((k) => votes[k] === "like").length;

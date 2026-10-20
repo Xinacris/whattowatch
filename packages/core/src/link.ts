@@ -3,19 +3,21 @@ import { sanitizeFilters, type Era, type Kind, type RoomFilters } from "./filter
 import { GENRES } from "./genres";
 import type { Vote } from "./match";
 import { ROUND_FIRST } from "./rounds";
-import { parseTitleKey, titleKey, type TitleKey } from "./tmdb/models";
+import { itemKey, parseItemKey, type ItemKey, type ItemKind } from "./item-key";
+import { titleKey, type TitleKey } from "./tmdb/models";
 
 // Link mode: the whole room fits in the URL.
 // v1 (still decoded): filters + seed, each voter's likes/seen as sorted key sets.
 // v2: the deck itself, in order, plus a 2-bit vote per deck card per voter, and a results flag.
+// v3: as v2, but a deck key also says if it's a movie, a series or a film series (id * 3 + kind).
 
-export interface LinkVoter { name: string; likes: TitleKey[]; seen: TitleKey[] }
+export interface LinkVoter { name: string; likes: ItemKey[]; seen: ItemKey[] }
 export interface LinkPayload {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   filters: RoomFilters;
   seed: string;
-  /** v2: exactly what the friend swipes. v1: empty, the deck comes from the seed. */
-  deck: TitleKey[];
+  /** v2/v3: exactly what the friend swipes. v1: empty, the deck comes from the seed. */
+  deck: ItemKey[];
   voters: LinkVoter[];
   /** A results link: opens straight to the results, no swiping. */
   finished: boolean;
@@ -26,50 +28,53 @@ const ERAS: Era[] = ["any", "new", "classic"];
 export const MAX_LINK_VOTERS = 8;
 export const MAX_LINK_DECK = 60;
 
-function keyToNumber(key: TitleKey): number {
-  const p = parseTitleKey(key);
-  return p ? p.id * 2 + (p.type === "tv" ? 1 : 0) : -1;
+const ITEM_KINDS: ItemKind[] = ["movie", "tv", "collection"];
+
+function keyToNumber(key: ItemKey): number {
+  const p = parseItemKey(key);
+  return p ? p.id * 3 + ITEM_KINDS.indexOf(p.kind) : -1;
 }
 
-function numberToKey(n: number): TitleKey {
-  return titleKey(n % 2 === 1 ? "tv" : "movie", Math.floor(n / 2));
-}
+const numberToKey = (n: number): ItemKey => itemKey(ITEM_KINDS[n % 3] as ItemKind, Math.floor(n / 3));
+
+/** v1 and v2 knew only titles: id * 2 + (tv ? 1 : 0). */
+const numberToKeyV2 = (n: number): TitleKey => titleKey(n % 2 === 1 ? "tv" : "movie", Math.floor(n / 2));
 
 /** v1 key sets: sorted, deltas always positive. */
-function readKeys(r: Reader): TitleKey[] {
+function readKeys(r: Reader): ItemKey[] {
   const count = r.varint();
   if (count > 5000) throw new RangeError("too many keys");
-  const out: TitleKey[] = [];
+  const out: ItemKey[] = [];
   let prev = 0;
-  for (let i = 0; i < count; i++) { prev += r.varint(); out.push(numberToKey(prev)); }
+  for (let i = 0; i < count; i++) { prev += r.varint(); out.push(numberToKeyV2(prev)); }
   return out;
 }
 
 const zig = (n: number) => (n >= 0 ? n * 2 : -n * 2 - 1);
 const unzig = (z: number) => (z % 2 === 0 ? z / 2 : -(z + 1) / 2);
 
-/** v2 deck: order kept, each id as a zigzag delta from the one before. */
-function writeDeck(w: Writer, deck: readonly TitleKey[]): void {
+/** v2/v3 deck: order kept, each id as a zigzag delta from the one before. */
+function writeDeck(w: Writer, deck: readonly ItemKey[]): void {
   w.varint(deck.length);
   let prev = 0;
   for (const n of deck.map(keyToNumber)) { w.varint(zig(n - prev)); prev = n; }
 }
 
-function readDeck(r: Reader): TitleKey[] {
+function readDeck(r: Reader, toKey: (n: number) => ItemKey): ItemKey[] {
   const count = r.varint();
   if (count > MAX_LINK_DECK) throw new RangeError("deck too long");
-  const out: TitleKey[] = [];
+  const out: ItemKey[] = [];
   let prev = 0;
   for (let i = 0; i < count; i++) {
     prev += unzig(r.varint());
     if (prev < 0) throw new RangeError("bad key");
-    out.push(numberToKey(prev));
+    out.push(toKey(prev));
   }
   return out;
 }
 
 // 0 = not voted, 1 = yes, 2 = no, 3 = seen it. Four cards per byte.
-function writeVotes(w: Writer, deck: readonly TitleKey[], v: LinkVoter): void {
+function writeVotes(w: Writer, deck: readonly ItemKey[], v: LinkVoter): void {
   const likes = new Set(v.likes);
   const seen = new Set(v.seen);
   const codes = deck.map((k) => (likes.has(k) ? 1 : seen.has(k) ? 3 : 2));
@@ -78,7 +83,7 @@ function writeVotes(w: Writer, deck: readonly TitleKey[], v: LinkVoter): void {
   }
 }
 
-function readVotes(r: Reader, deck: readonly TitleKey[], name: string): LinkVoter {
+function readVotes(r: Reader, deck: readonly ItemKey[], name: string): LinkVoter {
   const v: LinkVoter = { name, likes: [], seen: [] };
   for (let i = 0; i < deck.length; i += 4) {
     const b = r.byte();
@@ -119,7 +124,7 @@ function readFilters(r: Reader): RoomFilters {
 
 export function encodeLink(p: Omit<LinkPayload, "version">): string {
   const deck = p.deck.slice(0, MAX_LINK_DECK);
-  const w = new Writer().byte(2).byte(p.finished ? 1 : 0);
+  const w = new Writer().byte(3).byte(p.finished ? 1 : 0);
   writeFilters(w, p.filters);
   w.string(p.seed);
   writeDeck(w, deck);
@@ -140,17 +145,17 @@ function decodeV1(r: Reader): LinkPayload | null {
   return { version: 1, filters, seed, deck: [], voters, finished: false };
 }
 
-function decodeV2(r: Reader): LinkPayload | null {
+function decodeDeckLink(r: Reader, version: 2 | 3): LinkPayload | null {
   const finished = r.byte() === 1;
   const filters = readFilters(r);
   const seed = r.string();
   if (!seed) return null;
-  const deck = readDeck(r);
+  const deck = readDeck(r, version === 2 ? numberToKeyV2 : numberToKey);
   const voters: LinkVoter[] = [];
   const n = r.varint();
   if (n > MAX_LINK_VOTERS) return null;
   for (let i = 0; i < n; i++) voters.push(readVotes(r, deck, r.string()));
-  return { version: 2, filters, seed, deck, voters, finished };
+  return { version, filters, seed, deck, voters, finished };
 }
 
 /** Returns null on anything malformed: a mangled link should land on a friendly page, not a crash. */
@@ -158,7 +163,7 @@ export function decodeLink(token: string): LinkPayload | null {
   try {
     const r = new Reader(fromBase64Url(token.trim()));
     const version = r.byte();
-    return version === 1 ? decodeV1(r) : version === 2 ? decodeV2(r) : null;
+    return version === 1 ? decodeV1(r) : version === 2 || version === 3 ? decodeDeckLink(r, version) : null;
   } catch {
     return null;
   }
@@ -183,14 +188,14 @@ export function linkStage(p: LinkPayload, votedHere: boolean): LinkStage {
 }
 
 /** Your picks as a link voter, in deck order. */
-export function picksOf(name: string, deck: readonly TitleKey[], votes: Readonly<Record<string, Vote>>): LinkVoter {
+export function picksOf(name: string, deck: readonly ItemKey[], votes: Readonly<Record<string, Vote>>): LinkVoter {
   return { name, likes: deck.filter((k) => votes[k] === "like"), seen: deck.filter((k) => votes[k] === "seen") };
 }
 
 /** The deck everyone swipes from here on. v1 links never carried one, so it's whatever this device loaded. */
-export const linkDeck = (p: LinkPayload, loaded: readonly TitleKey[]): TitleKey[] => (p.version === 2 ? p.deck : [...loaded]);
+export const linkDeck = (p: LinkPayload, loaded: readonly ItemKey[]): ItemKey[] => (p.version === 1 ? [...loaded] : p.deck);
 
-export function nextLink(p: LinkPayload, deck: readonly TitleKey[], voters: LinkVoter[], finished: boolean): string {
+export function nextLink(p: LinkPayload, deck: readonly ItemKey[], voters: LinkVoter[], finished: boolean): string {
   return encodeLink({ filters: p.filters, seed: p.seed, deck: [...deck], voters, finished });
 }
 

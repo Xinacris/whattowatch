@@ -67,6 +67,32 @@ describe("buildDeckPage", () => {
   });
 });
 
+describe("buildDeckPage with film series", () => {
+  // Movies 3, 7 and 12 are one series (900); 5 is the only part of series 901 on the shelf.
+  const series = { 3: 900, 7: 900, 12: 900, 5: 901, 60: 901 };
+  const movies = sanitizeFilters({ kind: "movie", region: "TR" });
+  it("two parts on one page make one series card, in the place of the first", async () => {
+    const { cards } = await buildDeckPage(fakeTmdb(20, { series }), movies, "s", 0, "en-US");
+    const keys = cards.map((c) => c.key);
+    expect(keys.filter((k) => k === "c:900")).toHaveLength(1);
+    expect(keys).not.toContain("m3");
+    expect(keys).not.toContain("m7");
+    expect(cards).toHaveLength(18);
+    const s = cards.find((c) => c.key === "c:900");
+    expect(s?.collection?.parts.map((p) => p.id)).toEqual([3, 7, 12]);
+    expect(s?.title).toBe("Series 900");
+  });
+  it("a lone part stays a title, tagged with its series", async () => {
+    const { cards } = await buildDeckPage(fakeTmdb(20, { series }), movies, "s", 0, "en-US");
+    expect(cards.find((c) => c.key === "m5")?.partOf).toEqual({ id: 901, name: "Series 901" });
+  });
+  it("a series that fails to load leaves its parts as plain cards", async () => {
+    const { cards } = await buildDeckPage(fakeTmdb(20, { series, failSeries: [900] }), movies, "s", 0, "en-US");
+    expect(cards.map((c) => c.key)).toEqual(expect.arrayContaining(["m3", "m7", "m12"]));
+    expect(cards).toHaveLength(20);
+  });
+});
+
 describe("paging", () => {
   it("appends without repeats and pages ahead at 5 left", async () => {
     const { cards } = await buildDeckPage(fakeTmdb(), f, "abc", 0, "en-US");

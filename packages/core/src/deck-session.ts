@@ -2,11 +2,12 @@ import { appendPage, needsNextPage } from "./deck";
 import type { RoomFilters } from "./filters";
 import type { Vote } from "./match";
 import type { Lang } from "./region";
-import type { DeckCard, TitleKey } from "./tmdb/models";
+import type { ItemKey } from "./item-key";
+import type { DeckCard } from "./tmdb/models";
 
 // The swipe deck as a tiny observable store, shared by web (useSyncExternalStore) and mobile.
 
-export interface Swipe { key: TitleKey; vote: Vote }
+export interface Swipe { key: ItemKey; vote: Vote }
 
 export interface DeckState {
   filters: RoomFilters | null;
@@ -20,15 +21,15 @@ export interface DeckState {
   error: boolean;
   last: Swipe | null; // undo goes back exactly one swipe
   /** Fixed deck (friend in link mode, live rooms): these keys, in this order, nothing else. */
-  keys: TitleKey[] | null;
+  keys: ItemKey[] | null;
   /** Old v1 links: stop after this many cards of the seed deck. */
   limit: number | null;
 }
 
-export interface StartOptions { keys?: TitleKey[]; limit?: number }
+export interface StartOptions { keys?: ItemKey[]; limit?: number }
 
 export type FetchDeckPage = (filters: RoomFilters, seed: string, page: number, lang: Lang) => Promise<{ cards: DeckCard[]; done: boolean }>;
-export type FetchCards = (keys: TitleKey[], filters: RoomFilters, lang: Lang) => Promise<DeckCard[]>;
+export type FetchCards = (keys: ItemKey[], filters: RoomFilters, lang: Lang) => Promise<DeckCard[]>;
 
 /** A deck that has seen this many pages has seen enough: stop instead of paging forever. */
 export const MAX_DECK_PAGES = 40;
@@ -40,12 +41,12 @@ const EMPTY: DeckState = { filters: null, seed: "", lang: "en", cards: [], votes
 
 export function createDeckSession(fetchPage: FetchDeckPage, fetchCards?: FetchCards) {
   let state = EMPTY;
-  let tried = new Set<TitleKey>(); // fixed decks: keys already asked for, so a dead id isn't refetched forever
+  let tried = new Set<ItemKey>(); // fixed decks: keys already asked for, so a dead id isn't refetched forever
   let generation = 0; // a restart drops late responses from the previous deck
   const listeners = new Set<() => void>();
   const set = (patch: Partial<DeckState>) => { state = { ...state, ...patch }; listeners.forEach((l) => l()); };
 
-  async function fetchFixed(keys: TitleKey[], filters: RoomFilters, gen: number): Promise<void> {
+  async function fetchFixed(keys: ItemKey[], filters: RoomFilters, gen: number): Promise<void> {
     const missing = keys.filter((k) => !tried.has(k));
     missing.forEach((k) => tried.add(k));
     const got = missing.length && fetchCards ? await fetchCards(missing, filters, state.lang) : [];
@@ -86,7 +87,7 @@ export function createDeckSession(fetchPage: FetchDeckPage, fetchCards?: FetchCa
       void fetchMore();
     },
     /** A live room dealt more cards: load the new ones, keep the old. */
-    setKeys(keys: TitleKey[]) {
+    setKeys(keys: ItemKey[]) {
       if (!state.keys || keys.join() === state.keys.join()) return;
       set({ keys, done: false });
       void fetchMore();

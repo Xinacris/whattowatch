@@ -1,6 +1,8 @@
 import type { TmdbClient } from "./client";
+import { groupIntoCollections, settleGroups, toCollectionSummary, type CollectionSummary, type ListItem, type SeriesRef } from "../collections";
+import { mapLimit, toTitleMeta, type MetaLoader, type TitleMeta } from "../movie-meta";
 import { toCollection, toDetail, toPerson, toPersonSummary, toSummaries, toProviders, toDeckCard } from "./mappers";
-import type { CollectionDetail, DeckCard, MediaType, PersonDetail, PersonSummary, Provider, SearchResults, TitleDetail, TitleSummary } from "./models";
+import { parseTitleKey, titleKey, type CollectionDetail, type DeckCard, type MediaType, type PersonDetail, type PersonSummary, type Provider, type SearchResults, type TitleDetail, type TitleSummary } from "./models";
 import type { RawCollection, RawDetail, RawPage, RawPerson, RawProvider } from "./raw";
 import { discoverParams, mergeLists, searchTypes, summaryPasses, type SearchFilters } from "../search";
 
@@ -24,9 +26,58 @@ export async function titleDetail(c: TmdbClient, type: MediaType, id: number, la
   return toDetail(raw, type, region);
 }
 
+/** Details as the deck and the meta loader read them. One URL, so one cache entry serves both. */
+export const detailsRaw = (c: TmdbClient, type: MediaType, id: number, language: string) =>
+  c.get<RawDetail>(`/${type}/${id}`, { language, append_to_response: "credits,watch/providers" });
+
 export async function deckCard(c: TmdbClient, type: MediaType, id: number, language: string, region: string, only: number[]): Promise<DeckCard> {
-  const raw = await c.get<RawDetail>(`/${type}/${id}`, { language, append_to_response: "credits,watch/providers" });
-  return toDeckCard(raw, type, region, only);
+  return toDeckCard(await detailsRaw(c, type, id, language), type, region, only);
+}
+
+/** Batches detail lookups, at most `limit` in flight. A title that fails is left out, never thrown. */
+export function createMetaLoader(c: TmdbClient, language: string, region: string, limit = 8): MetaLoader {
+  return async (keys) => {
+    const uniq = [...new Set(keys)];
+    const settled = await mapLimit(uniq, limit, async (key) => {
+      const p = parseTitleKey(key);
+      if (!p) throw new Error("bad key");
+      return toTitleMeta(await detailsRaw(c, p.type, p.id, language), p.type, region);
+    });
+    return new Map(settled.flatMap((r) => (r.status === "fulfilled" ? [[r.value.key, r.value] as const] : [])));
+  };
+}
+
+/**
+ * Film series by id, with their parts' runtimes and services from one batched meta lookup.
+ * A series that fails to load is missing from the map; a name TMDB has no translation for falls back to English.
+ */
+export async function collectionSummaries(c: TmdbClient, ids: readonly number[], language: string, meta: MetaLoader, now = new Date()): Promise<Map<number, CollectionSummary>> {
+  const uniq = [...new Set(ids)];
+  const raws = await mapLimit(uniq, 8, async (id) => {
+    const raw = await c.get<RawCollection>(`/collection/${id}`, { language });
+    const fallback = (raw.name?.trim() || language.startsWith("en")) ? undefined : (await c.get<RawCollection>(`/collection/${id}`, { language: "en-US" }).catch(() => null))?.name;
+    return { raw, fallback };
+  });
+  const loaded = raws.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  const metas = await meta(loaded.flatMap(({ raw }) => (raw.parts ?? []).map((p) => titleKey("movie", p.id))));
+  return new Map(loaded.map(({ raw, fallback }) => [raw.id, toCollectionSummary(raw, metas, { now, fallbackName: fallback })]));
+}
+
+/** Groups an ordered list into titles and series, loading what grouping needs. Anything that fails stays ungrouped. */
+export async function groupList<T extends { key: string; type: MediaType; id: number }>(
+  c: TmdbClient, items: readonly T[], language: string, meta: MetaLoader, seriesOf?: (item: T) => SeriesRef | null,
+): Promise<ListItem<T>[]> {
+  const metas: Map<string, TitleMeta> = seriesOf ? new Map() : await meta(items.filter((i) => i.type === "movie").map((i) => titleKey("movie", i.id)));
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const lookup = (id: number) => {
+    const item = byId.get(id);
+    if (seriesOf && item) return seriesOf(item);
+    return metas.get(titleKey("movie", id))?.collection ?? null;
+  };
+  const grouped = groupIntoCollections(items, lookup);
+  const ids = grouped.flatMap((g) => (g.kind === "collection" ? [g.series.id] : []));
+  const summaries = ids.length ? await collectionSummaries(c, ids, language, meta) : new Map<number, CollectionSummary>();
+  return settleGroups(grouped, (id) => summaries.get(id));
 }
 
 export async function person(c: TmdbClient, id: number, language: string): Promise<PersonDetail> {

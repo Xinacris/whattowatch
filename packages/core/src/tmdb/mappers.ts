@@ -63,11 +63,17 @@ export function toProviders(region: RawRegionProviders | undefined): Provider[] 
   return out;
 }
 
+/** Streaming, free or with ads; one entry per service. */
+export function streamingOnly(all: Provider[]): Provider[] {
+  const subs = all.filter((p) => p.kind === "sub" || p.kind === "free" || p.kind === "ads");
+  return subs.filter((p, i) => subs.findIndex((q) => q.id === p.id) === i);
+}
+
 export function regionProviders(detail: RawDetail, region: string): RawRegionProviders | undefined {
   return detail["watch/providers"]?.results?.[region.toUpperCase()];
 }
 
-function runtimeOf(d: RawDetail): number | null {
+export function runtimeOf(d: RawDetail): number | null {
   if (d.runtime) return d.runtime;
   const ep = d.episode_run_time?.find((n) => n > 0);
   return ep ?? null;
@@ -104,9 +110,10 @@ export function toDetail(d: RawDetail, type: MediaType, region: string): TitleDe
 /** Card for the deck. `only` limits provider logos to the room's services, if any were picked. */
 export function toDeckCard(d: RawDetail, type: MediaType, region: string, only: number[] = []): DeckCard {
   const summary = toSummary(d, type) as TitleSummary;
-  const subs = toProviders(regionProviders(d, region)).filter((p) => p.kind === "sub" || p.kind === "free" || p.kind === "ads");
-  const unique = subs.filter((p, i) => subs.findIndex((q) => q.id === p.id) === i);
+  const unique = streamingOnly(toProviders(regionProviders(d, region)));
+  const series = type === "movie" ? d.belongs_to_collection : null;
   return {
+    ...(series ? { partOf: { id: series.id, name: series.name } } : {}),
     ...summary,
     genreIds: (d.genres ?? []).map((g) => g.id),
     runtime: runtimeOf(d),
@@ -148,11 +155,12 @@ export function toCollection(c: RawCollection): CollectionDetail {
 
 /** For a match someone else reached first: build a card from the full detail. */
 export function detailToDeckCard(d: TitleDetail): DeckCard {
-  const subs = d.providers.filter((p) => p.kind === "sub" || p.kind === "free" || p.kind === "ads");
+  const unique = streamingOnly(d.providers);
   return {
+    ...(d.collection ? { partOf: d.collection } : {}),
     key: d.key, id: d.id, type: d.type, title: d.title, year: d.year, poster: d.poster, rating: d.rating, overview: d.overview,
     genreIds: d.genreIds, runtime: d.runtime, genreNames: d.genres.slice(0, 2).map((g) => g.name),
-    providers: subs.filter((p, i) => subs.findIndex((q) => q.id === p.id) === i).slice(0, 4),
+    providers: unique.slice(0, 4),
     cast: d.cast.slice(0, 5).map((c) => c.name),
   };
 }

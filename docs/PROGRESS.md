@@ -92,7 +92,7 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 
 - [x] 1. Branch, brief, plan
 - [x] 2. Vercel ↔ GitHub, READY preview from a push
-- [ ] 3. Core: item-key, collections grouping, codec v3 (tests)
+- [x] 3. Core: item-key, collections grouping, codec v3 (tests)
 - [ ] 4. Cached movie-meta loader; search and deck use it
 - [ ] 5. Search, suggestions, collection page
 - [ ] 6. Deck (link, live, mobile) and results
@@ -103,3 +103,8 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 2: both projects connected with `vercel git connect` (production branch `main`). Settings set through `vercel api PATCH /v9/projects`: root `apps/web` / `apps/match`, framework nextjs, install `pnpm install`, build `pnpm turbo run build --filter=<project>`, files outside the root included, ignored build step `npx turbo-ignore`. `ENABLE_EXPERIMENTAL_COREPACK=1` added for preview too (it was production-only), so preview builds use pnpm 12.
 - Step 2: the first Git builds failed with `ERR_PNPM_OUTDATED_LOCKFILE` ("the lockfile records importers["apps/mobile"], but that project's directory has no package.json"). `.vercelignore` dropped `apps/mobile`, and Git builds honour it. Removed that line; mobile sources are uploaded but never built on Vercel (the build is filtered to the project).
 - Step 2: after the fix, push of `f36f291` produced Git-triggered previews `whattowatch-isdaqwsl4-…` and `whattowatch-match-keskksnd7-…`, both READY. Previews sit behind Vercel deployment protection (plain curl gets 302), so they're checked with `vercel curl --deployment <url>`, which handles the bypass: `/`, `/search?q=shrek`, `/match/new` all 200.
+- Step 3: series key is `c:<id>` as the brief says; title keys keep their old form (`m603`), so every stored ballot and Redis room stays valid. `DeckCard` is shared by titles and series: a series card carries `collection` (its `CollectionSummary`), a lone part carries `partOf`. One card type means the deck, rounds and votes needed no second code path.
+- Step 3: grouping is two pure steps: `groupIntoCollections` (one pass, one Map) decides where series go; `settleGroups` swaps them for loaded summaries and returns any series that failed to load, or has fewer than two released parts, to plain titles.
+- Step 3: series dedupe in the deck is by series id across pages (`appendPage`) and in rooms (`DeckBook.series`). Once Shrek is in the deck as the series card or as one lone part, no later Shrek card is dealt. Rooms stored before this have no `series` and simply can't dedupe their old cards.
+- Step 3: results lift a yes on a lone part to the series card when the deck has one (`matchesFromVoters(deck, voters, seriesOf)`). Only likes are lifted; "seen" Shrek 2 doesn't rule out the series.
+- Step 3: codec v3 = v2 with `id * 3 + kind` (movie/tv/collection). 30 items (6 of them series) + 3 voters = 231 characters. v1 and v2 tokens still decode (a v2 writer is kept in the tests).

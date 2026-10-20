@@ -3,7 +3,7 @@ import type { Ballot, Vote } from "./match";
 import { matchesFromVoters } from "./results";
 import { CODE_LENGTH } from "./room-code";
 import { MAX_VOTED, meetsRatio, ROUND_EXTRA, ROUND_FIRST } from "./rounds";
-import type { TitleKey } from "./tmdb/models";
+import type { ItemKey } from "./item-key";
 
 export const ROOM_TTL_MS = 12 * 60 * 60 * 1000;
 /** Poll every 2s; three missed polls and a few seconds' grace means you've left the couch. */
@@ -18,8 +18,12 @@ export interface Member extends Viewer { joinedAt: number; lastSeen: number }
 
 export interface RoomMeta { code: string; filters: RoomFilters; seed: string; createdAt: number; hostId: string }
 
-/** The room's shared deck. `pool` holds titles already fetched but not dealt yet. */
-export interface DeckBook { deck: TitleKey[]; pool: TitleKey[]; page: number; exhausted: boolean }
+/**
+ * The room's shared deck. `pool` holds titles already fetched but not dealt yet. `series` = film
+ * series already in deck or pool, so a later page can't deal Shrek 2 after the Shrek series card.
+ * (Rooms made before series existed have no `series`.)
+ */
+export interface DeckBook { deck: ItemKey[]; pool: ItemKey[]; page: number; exhausted: boolean; series?: number[] }
 
 export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; book: DeckBook }
 
@@ -27,17 +31,17 @@ export interface Room extends RoomMeta { members: Member[]; ballots: Record<stri
 export interface RoomView extends RoomMeta {
   members: Member[];
   mine: Ballot;
-  deck: TitleKey[];
+  deck: ItemKey[];
   /** Names of present members with cards left. */
   waitingOn: string[];
   done: boolean;
   /** Only once the room is done: nobody sees a result before everyone finishes. */
-  results: TitleKey[] | null;
+  results: ItemKey[] | null;
   expiresAt: number;
 }
 
-/** Pulls one discover page of title keys. Injected so core never talks to TMDB on its own. */
-export type DealPage = (filters: RoomFilters, seed: string, page: number) => Promise<{ keys: TitleKey[]; done: boolean }>;
+/** Pulls one discover page of keys, with the series each belongs to. Injected so core never talks to TMDB on its own. */
+export type DealPage = (filters: RoomFilters, seed: string, page: number) => Promise<{ keys: ItemKey[]; done: boolean; series?: Record<string, number> }>;
 
 export type RoomResult<T> = { ok: true; value: T } | { ok: false; reason: "not_found" | "expired" | "full" | "bad_code" };
 
@@ -47,7 +51,7 @@ export interface RoomStore {
   get(code: string): Promise<Room | null>;
   upsertMember(code: string, member: Member): Promise<void>;
   removeMember(code: string, memberId: string): Promise<void>;
-  setVote(code: string, memberId: string, key: TitleKey, vote: Vote | null): Promise<void>;
+  setVote(code: string, memberId: string, key: ItemKey, vote: Vote | null): Promise<void>;
   /** Replaces the book only if the deck is still `fromLength` long. Two members finishing together extend once. */
   extendDeck(code: string, fromLength: number, book: DeckBook): Promise<boolean>;
 }
@@ -65,17 +69,22 @@ const MAX_DEAL_PAGES = 6;
 /** Moves titles from the pool into the deck until it holds `size`, fetching pages as needed. */
 export async function fillBook(book: DeckBook, size: number, filters: RoomFilters, seed: string, deal: DealPage): Promise<DeckBook> {
   let { pool, page, exhausted } = book;
-  const have = new Set([...book.deck, ...pool]);
+  const have = new Set<string>([...book.deck, ...pool]);
+  const series = new Set(book.series ?? []);
   for (let n = 0; book.deck.length + pool.length < size && !exhausted && n < MAX_DEAL_PAGES; n++) {
     const res = await deal(filters, seed, page);
-    const fresh = res.keys.filter((k) => !have.has(k));
-    fresh.forEach((k) => have.add(k));
-    pool = [...pool, ...fresh];
+    for (const k of res.keys) {
+      const s = res.series?.[k] ?? null;
+      if (have.has(k) || (s !== null && series.has(s))) continue;
+      have.add(k);
+      if (s !== null) series.add(s);
+      pool = [...pool, k];
+    }
     page += 1;
     exhausted = res.done;
   }
   const take = Math.max(0, size - book.deck.length);
-  return { deck: [...book.deck, ...pool.slice(0, take)], pool: pool.slice(take), page, exhausted: exhausted && pool.length <= take };
+  return { deck: [...book.deck, ...pool.slice(0, take)], pool: pool.slice(take), page, exhausted: exhausted && pool.length <= take, series: [...series] };
 }
 
 export interface RoomRound { done: boolean; pending: string[]; extendTo: number | null }
@@ -152,7 +161,7 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
   return { ok: true, value: toView({ ...room, members, book }, viewer.id, now) };
 }
 
-export async function castVote(store: RoomStore, code: string, viewer: Viewer, key: TitleKey, vote: Vote | null, now: number, deal?: DealPage): Promise<RoomResult<RoomView>> {
+export async function castVote(store: RoomStore, code: string, viewer: Viewer, key: ItemKey, vote: Vote | null, now: number, deal?: DealPage): Promise<RoomResult<RoomView>> {
   const loaded = await load(store, code, now);
   if (!loaded.ok) return loaded;
   if (!loaded.value.book.deck.includes(key)) return syncRoom(store, code, viewer, now, deal);

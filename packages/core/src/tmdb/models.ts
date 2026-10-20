@@ -1,4 +1,6 @@
 // What the apps render. Plain JSON so it crosses the network and the RN bridge untouched.
+import type { CollectionSummary, SeriesRef } from "../collections";
+import type { ItemKey } from "../item-key";
 
 export type MediaType = "movie" | "tv";
 /** "m603" or "t1396": TMDB ids collide across movie and tv. */
@@ -61,12 +63,17 @@ export interface CollectionDetail { id: number; name: string; overview: string; 
 
 export interface SearchResults { titles: TitleSummary[]; people: PersonSummary[] }
 
-/** A swipe card: a summary plus what the deck needs to show without another fetch. */
-export interface DeckCard extends TitleSummary {
+/** A swipe card: a summary plus what the deck needs to show without another fetch. A series card carries `collection`. */
+export interface DeckCard extends Omit<TitleSummary, "key"> {
+  key: ItemKey;
   runtime: number | null;
   genreNames: string[];
   providers: Provider[];
   cast: string[];
+  /** A lone part of a film series. */
+  partOf?: SeriesRef;
+  /** The whole series as one card; `title`, `year` and `poster` then describe the series. */
+  collection?: CollectionSummary;
 }
 
 export function titleKey(type: MediaType, id: number): TitleKey {

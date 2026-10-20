@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { castVote, createMemoryStore, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, type DealPage, type RoomStore, type TitleKey, type Vote } from "../src";
+import { castVote, createMemoryStore, fillBook, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, type DealPage, type RoomStore, type TitleKey, type Vote } from "../src";
 
 const A = { id: "a", name: "Ayşe" };
 const B = { id: "b", name: "Burak" };
@@ -15,6 +15,13 @@ function dealer(total = 60): DealPage & { calls: number } {
   }) as DealPage & { calls: number };
   deal.calls = 0;
   return deal;
+}
+
+/** Movies 1 and 2 are parts of series 900; page 1 brings the series card itself. */
+function seriesDealer(): DealPage {
+  return async (_f, _s, page): ReturnType<DealPage> => page === 0
+    ? { keys: ["m1", "m3", "m2", ...Array.from({ length: 7 }, (_, i) => `m${i + 10}` as TitleKey)], done: false, series: { m1: 900, m2: 900 } }
+    : { keys: ["c:900", "m40", "m41", "m42", "m43", "m44"], done: true, series: { "c:900": 900 } };
 }
 
 async function room(deal = dealer(), store: RoomStore = createMemoryStore()) {
@@ -105,5 +112,22 @@ describe("live rooms", () => {
     expect(await syncRoom(s, "ABC23", A, 0)).toEqual({ ok: false, reason: "bad_code" });
     expect(await syncRoom(s, "ZZZ999", A, 0)).toEqual({ ok: false, reason: "not_found" });
     expect(await syncRoom(s, "ABC234", A, ROOM_TTL_MS + 1)).toEqual({ ok: false, reason: "expired" });
+  });
+});
+
+describe("dealing film series", () => {
+  it("never deals a second card from a series already in the room deck", async () => {
+    const deal = seriesDealer();
+    const first = await firstBook(filters, "seed", deal);
+    const tens = Array.from({ length: 7 }, (_, i) => `m${i + 10}`);
+    expect(first.deck).toEqual(["m1", "m3", ...tens, "m40"]);
+    expect(first.series).toEqual([900]);
+    const grown = await fillBook(first, 15, filters, "seed", deal);
+    expect(grown.deck).toEqual(["m1", "m3", ...tens, "m40", "m41", "m42", "m43", "m44"]);
+    expect(grown).toMatchObject({ exhausted: true, pool: [] });
+  });
+  it("books stored before series existed still extend (they just can't know m1's series)", async () => {
+    const grown = await fillBook({ deck: ["m1"], pool: [], page: 1, exhausted: false }, 3, filters, "seed", seriesDealer());
+    expect(grown.deck).toEqual(["m1", "c:900", "m40"]);
   });
 });
