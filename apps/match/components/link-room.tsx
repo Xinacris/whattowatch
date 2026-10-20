@@ -30,12 +30,7 @@ export function LinkRoom({ payload }: { payload: LinkPayload }) {
     case "swipe":
       return <LinkFriend payload={payload} name={name ?? ""} intro={t("link.yourTurn", { names: listNames(lang, names) })} />;
     case "waiting":
-      return (
-        <>
-          <Notice title={t("waiting.title")} body={t("waiting.body")} />
-          <div className="-mt-16"><ShareScreen liked={null} url={window.location.href} /></div>
-        </>
-      );
+      return <ShareScreen title={t("waiting.title")} line={t("waiting.body")} url={window.location.href} />;
     case "results":
       return <ResultsScreen results={matchesFromVoters(payload.deck, payload.voters)} names={names} addPerson={payload.finished ? null : window.location.href} onSwap={swapTo(payload)} />;
     case "solo":

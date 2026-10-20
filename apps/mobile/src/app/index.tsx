@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { normalizeRoomCode } from "@wtw/core";
-import { Btn, Field, Sticker } from "@/components/ui";
+import { Btn, Field } from "@/components/ui";
 import { usePrefs } from "@/lib/prefs";
 import { colors, fontSize, s, space } from "@/lib/theme";
 
@@ -23,7 +23,6 @@ export default function Home() {
           <Text style={s.label}>{t("lang.label")}</Text>
         </Pressable>
       </View>
-      <Sticker text={t("landing.kicker")} />
       <Text style={[s.display, { fontSize: 56, lineHeight: 58 }]}>{t("landing.headline")}</Text>
       <Text style={[s.body, s.dim, { fontSize: fontSize.base, lineHeight: 22 }]}>{t("landing.sub")}</Text>
       <Btn tone="label" title={`${t("landing.start")} →`} onPress={() => router.push("/new")} testID="start" />

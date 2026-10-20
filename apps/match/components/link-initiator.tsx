@@ -37,7 +37,7 @@ export function LinkInitiator({ payload, name }: { payload: LinkPayload; name: s
         markVoted(payload.seed);
         window.history.replaceState(null, "", url); // reload now opens "waiting for your friend"
       };
-      return <ShareScreen liked={round.liked} url={url} note={note} onShared={sent} onUndo={() => useDeck.getState().undo()} />;
+      return <ShareScreen title={t("share.title", { n: round.liked })} line={note ?? t("share.line")} url={url} onShared={sent} onUndo={() => useDeck.getState().undo()} />;
     }
     case "capped-empty":
       return (

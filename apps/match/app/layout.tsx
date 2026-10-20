@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Movie night · WhatToWatch", template: "%s · WhatToWatch" },
-  description: "Everyone swipes the same stack. First thing you all say yes to, you watch.",
+  description: "Swipe the same stack. Watch what you all liked.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

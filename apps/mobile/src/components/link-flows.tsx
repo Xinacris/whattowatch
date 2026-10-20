@@ -30,7 +30,7 @@ export function Initiator({ payload, name }: { payload: LinkPayload; name: strin
     case "done": {
       const keys = votedKeys(order, votes);
       const note = round.reason === "cap" ? t("share.picky") : round.reason === "end" ? t("share.shelfEnd") : null;
-      return <ShareView liked={round.liked} url={url(nextLink(payload, keys, [picksOf(name, keys, votes)], false))} note={note} onShared={() => void markVoted(payload.seed)} onUndo={() => deck.undo()} />;
+      return <ShareView title={t("share.title", { n: round.liked })} line={note ?? t("share.line")} url={url(nextLink(payload, keys, [picksOf(name, keys, votes)], false))} onShared={() => void markVoted(payload.seed)} onUndo={() => deck.undo()} />;
     }
     case "capped-empty":
       return (

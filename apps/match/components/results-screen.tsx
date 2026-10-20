@@ -19,6 +19,7 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
   const { lang } = usePrefs();
   const cards = useCards(results);
   const zero = results.length === 0;
+  const [more, setMore] = useState(false); // zero overlap: two buttons up front, the rest behind "More"
   return (
     <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6" data-testid="results">
       <h1 className="display text-5xl text-label sm:text-7xl">{zero ? t("results.zero") : t(names.length > 2 ? "results.titleMany" : "results.title")}</h1>
@@ -28,11 +29,14 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
       <ol className="mt-10 flex flex-col gap-6">
         {cards.map((c, i) => <ResultCard key={c.key} card={c} rank={i + 1} />)}
       </ol>
-      <div className="mt-12 flex flex-wrap gap-3 border-t-2 border-rule pt-6">
-        {zero && onSwap && <button type="button" className="btn btn-label" onClick={onSwap}>{t("results.swap")} →</button>}
+      <div className="mt-12 flex flex-wrap items-center gap-3 border-t-2 border-rule pt-6">
+        {zero && onSwap && <button type="button" className="btn btn-label" onClick={onSwap} data-testid="swap">{t("results.swap")} →</button>}
         {zero && <Link href="/match/new" className="btn btn-ghost">{t("deck.loosen")}</Link>}
-        {sendBack && <ShareButton url={sendBack} label={t("results.sendBack")} primary={!zero} testId="send-back" />}
-        {addPerson && <ShareButton url={addPerson} label={t("results.addPerson")} testId="add-person" />}
+        {(zero ? more : true) && sendBack && <ShareButton url={sendBack} label={t("results.sendBack")} primary={!zero} testId="send-back" />}
+        {(zero ? more : true) && addPerson && <ShareButton url={addPerson} label={t("results.addPerson")} testId="add-person" />}
+        {zero && !more && (sendBack || addPerson) && (
+          <button type="button" className="label text-paper-dim underline underline-offset-4 hover:text-label" onClick={() => setMore(true)} data-testid="more">{t("results.more")}</button>
+        )}
       </div>
     </section>
   );

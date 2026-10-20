@@ -61,7 +61,7 @@ function TitleCard({ entry, logos, lang, t, eager }: { entry: Extract<ResultEntr
           </span>
         )}
       </Link>
-      {partOf && <Link href={`/collection/${partOf.id}`} className="label mt-2 inline-block text-[11px] text-label underline-offset-2 hover:underline" data-testid="part-of">{t("series.partOf", { name: partOf.name })}</Link>}
+      {partOf && <Link href={`/collection/${partOf.id}`} className="label mt-2 inline-block text-[11px] text-label underline-offset-2 hover:underline" data-testid="part-of">{t("title.partOf", { name: partOf.name })}</Link>}
     </>
   );
 }

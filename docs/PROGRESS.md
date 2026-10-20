@@ -96,7 +96,7 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - [x] 4. Cached movie-meta loader; search and deck use it
 - [x] 5. Search, suggestions, collection page
 - [ ] 6. Deck (link, live, mobile) and results
-- [ ] 7. Copy diet, COPY.md, results kicker bug
+- [x] 7. Copy diet, COPY.md, results kicker bug
 - [ ] 8. Verify, screenshots, merge, production READY
 
 ## Decisions
@@ -112,3 +112,4 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 5: search filtering moved after grouping (TMDB search results are no longer pre-filtered), so a series is judged by all its parts. Series named by the query come first (`withNamedSeries`), ordered by where their first film came up in the title search; "shrek 2" also looks up "shrek" (`seriesQuery`), so it leads with the Shrek series and the card says "Has Shrek 2". A named series swallows its lone parts.
 - Step 5: TMDB's TR names are its own ("Şrek Koleksiyonu", "Yüzüklerin Efendisi [Seri]"); we show them as given rather than rewrite them to "… Serisi".
 - Step 5: unreleased parts are excluded from counts and years: Shrek shows `4 FILMS · 2001–2010` (Shrek 5, 2027, left out).
+- Step 7: 22 unused keys deleted (the old match pop-up and shortlist copy, among others). Zero-match results show 2 buttons plus a "More" text link. The share and waiting screens are one component with a headline and one line, and the picky/shelf note replaces the line instead of stacking on it. A copy test checks buttons are ≤3 words in both languages and that "your turn" lives only in `link.yourTurn`. The brief's example "You start this time" is 4 words, so the button is "You go first" / "Sen başla". Table in `docs/COPY.md`.

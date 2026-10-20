@@ -34,7 +34,7 @@ export default function LinkRoom() {
       {stage === "start" && <Initiator payload={payload} name={viewer.name} />}
       {stage === "swipe" && <Text style={[s.label, { color: colors.label, paddingHorizontal: space[4], paddingTop: space[3] }]}>{t("link.yourTurn", { names: listNames(lang, names) })}</Text>}
       {stage === "swipe" && <Friend payload={payload} name={viewer.name} />}
-      {stage === "waiting" && <><Notice title={t("waiting.title")} body={t("waiting.body")} /><ShareView liked={null} url={here} /></>}
+      {stage === "waiting" && <ShareView title={t("waiting.title")} line={t("waiting.body")} url={here} />}
       {stage === "results" && <ResultsView results={matchesFromVoters(payload.deck, payload.voters)} names={names} addPerson={payload.finished ? null : here} onSwap={swap(payload)} onLoosen={() => router.replace("/new")} />}
       {stage === "solo" && <Notice title={t("results.solo")} action={newNight} />}
     </View>
