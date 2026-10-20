@@ -179,3 +179,11 @@ export function withNamedSeries<T extends { key: string }>(grouped: readonly Lis
   const firstHit = (g: ListItem<T>) => (g.kind === "collection" && g.hits.length ? Math.min(...g.hits.map((h) => pos.get(h.key) ?? Infinity)) : Infinity);
   return [...lists.filter(isNamed).sort((a, b) => firstHit(a) - firstHit(b)), ...lists.filter((g) => !isNamed(g))];
 }
+
+const fold = (x: string) => x.toLocaleLowerCase("tr").replace(/\s+/g, " ").trim();
+
+/** "Has Shrek 2" is worth a line only when the query names that part and not just the series. */
+export function namesPart(query: string, seriesName: string, partTitle: string): boolean {
+  const q = fold(query);
+  return q.length >= 2 && fold(partTitle).includes(q) && !fold(seriesName).includes(q);
+}

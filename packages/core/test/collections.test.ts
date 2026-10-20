@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendPage, collectionDeckCard, groupIntoCollections, seriesQuery, withNamedSeries, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
+  appendPage, collectionDeckCard, groupIntoCollections, seriesQuery, withNamedSeries, namesPart, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
   type CollectionSummary, type DeckCard, type ItemKey, type MediaType, type RawCollection, type SeriesRef, type TitleMeta,
 } from "../src";
 
@@ -166,4 +166,14 @@ describe("search: series named by the query", () => {
   it("nothing named: the list is unchanged", () => {
     expect(withNamedSeries(grouped, [], titles)).toEqual(grouped);
   });
+});
+
+describe("namesPart", () => {
+  it.each([
+    ["shrek 2", "Shrek Collection", "Shrek 2", true],
+    ["shrek", "Shrek Collection", "Shrek 2", false],
+    ["yüzüklerin efendisi", "Yüzüklerin Efendisi [Seri]", "Yüzüklerin Efendisi: İki Kule", false],
+    ["İKİ KULE", "Yüzüklerin Efendisi [Seri]", "Yüzüklerin Efendisi: İki Kule", true],
+    ["matrix", "The Matrix Collection", "The Matrix Reloaded", false],
+  ])("%s / %s / %s", (q, name, part, want) => expect(namesPart(q, name, part)).toBe(want));
 });

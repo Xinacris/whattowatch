@@ -27,7 +27,7 @@ test("(b) 3 of 10 shares at once; the friend gets exactly those cards, no pop-up
 
   // Initiator opening their own link: waiting, not a second deck.
   await a.reload();
-  await expect(a.getByText("Your part's done. Waiting on your friend.")).toBeVisible();
+  await expect(a.getByText("Done. Waiting on your friend.")).toBeVisible();
 
   const b = await person(browser);
   await b.goto(link);
@@ -64,8 +64,12 @@ test("(c) zero overlap gets an honest empty state", async ({ browser }) => {
   await swipeRun(b, "NNNLLLLLL");
   await finalSwipe(b, "ArrowRight");
   await expect(b.getByRole("heading", { name: "Zero overlap. Impressive, honestly." })).toBeVisible();
-  await expect(b.getByRole("button", { name: "Swap: you start this time" })).toBeVisible();
-  await expect(b.getByRole("link", { name: "Loosen the filters" })).toBeVisible();
+  await expect(b.getByRole("button", { name: "You go first" })).toBeVisible();
+  await expect(b.getByRole("link", { name: "Loosen filters" })).toBeVisible();
+  await expect(b.getByTestId("send-back")).toHaveCount(0); // behind "More"
+  await expect(b.getByTestId("results")).not.toContainText(/your turn/i);
+  await b.getByTestId("more").click();
+  await expect(b.getByTestId("send-back")).toBeVisible();
 });
 
 test("(d) a v1 link still opens and deals the friend ten cards", async ({ browser }) => {
@@ -81,5 +85,5 @@ test("(d) a v1 link still opens and deals the friend ten cards", async ({ browse
 test("a chewed-up link says so and offers a new night", async ({ page }) => {
   await page.goto("/match/link?d=AgAB");
   await expect(page.getByText("This tape is chewed up.")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Start a movie night/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Start movie night/ })).toBeVisible();
 });

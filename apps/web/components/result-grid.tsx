@@ -29,7 +29,7 @@ export function ResultGrid({ items }: { items: ResultEntry[] }) {
       {items.map((entry, i) => (
         <li key={entry.kind === "title" ? entry.item.key : entry.summary.key} data-testid="search-result">
           {entry.kind === "collection"
-            ? <CollectionCard summary={entry.summary} lang={lang} logos={entry.logos} note={seriesNote(entry, t)} eager={i < 6} />
+            ? <CollectionCard summary={entry.summary} lang={lang} logos={entry.logos} note={seriesNote(entry, t)} eager={i < 6} href={entry.hit ? `/collection/${entry.summary.id}?part=${entry.hit.id}` : undefined} />
             : <TitleCard entry={entry} logos={(entry.logos ?? late[entry.item.key] ?? []).slice(0, 3)} lang={lang} t={t} eager={i < 6} />}
         </li>
       ))}

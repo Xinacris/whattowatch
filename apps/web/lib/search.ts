@@ -1,6 +1,6 @@
 import "server-only";
 import {
-  browse, collectionSummaries, groupList, seriesQuery, withNamedSeries, isSearchMode, matchingParts, metaPasses, partPasses, searchCollections, searchPages, servicesWanted, summaryPasses,
+  browse, collectionSummaries, groupList, seriesQuery, withNamedSeries, namesPart, isSearchMode, matchingParts, metaPasses, partPasses, searchCollections, searchPages, servicesWanted, summaryPasses,
   type CollectionSummary, type ListItem, type Provider, type SearchFilters, type SearchRun, type SeriesRef, type TitleMeta, type TitleSummary,
 } from "@wtw/core";
 import { metaLoader, tmdb } from "@wtw/ui/server";
@@ -71,7 +71,7 @@ function entryFor(g: ListItem<TitleSummary>, metas: Map<string, TitleMeta>, f: S
   const one = Array.isArray(wanted) && wanted.length === 1 ? wanted[0] : null;
   return [{
     kind: "collection", summary: s, logos: logosFrom(unique, only),
-    hit: first && first.id !== s.parts[0]?.id ? { id: first.id, title: first.title, year: first.year } : null,
+    hit: first && namesPart(f.q, s.name, first.title) ? { id: first.id, title: first.title, year: first.year } : null,
     matching: passing.length < s.partCount ? passing.length : null,
     service: one ? (unique.find((p) => p.id === one)?.name ?? null) : null,
   }];

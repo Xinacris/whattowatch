@@ -95,7 +95,7 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - [x] 3. Core: item-key, collections grouping, codec v3 (tests)
 - [x] 4. Cached movie-meta loader; search and deck use it
 - [x] 5. Search, suggestions, collection page
-- [ ] 6. Deck (link, live, mobile) and results
+- [x] 6. Deck (link, live, mobile) and results
 - [x] 7. Copy diet, COPY.md, results kicker bug
 - [ ] 8. Verify, screenshots, merge, production READY
 
@@ -113,3 +113,6 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 5: TMDB's TR names are its own ("Şrek Koleksiyonu", "Yüzüklerin Efendisi [Seri]"); we show them as given rather than rewrite them to "… Serisi".
 - Step 5: unreleased parts are excluded from counts and years: Shrek shows `4 FILMS · 2001–2010` (Shrek 5, 2027, left out).
 - Step 7: 22 unused keys deleted (the old match pop-up and shortlist copy, among others). Zero-match results show 2 buttons plus a "More" text link. The share and waiting screens are one component with a headline and one line, and the picky/shelf note replaces the line instead of stacking on it. A copy test checks buttons are ≤3 words in both languages and that "your turn" lives only in `link.yourTurn`. The brief's example "You start this time" is 4 words, so the button is "You go first" / "Sen başla". Table in `docs/COPY.md`.
+- Step 6: link mode (initiator and friend), live rooms (server deal) and mobile all get series cards from the same `buildDeckPage`, and fixed decks load any `c:` key through the `cards` route. The friend's fixed deck now starts for any link that carries a deck (v2 or v3), not only v2. The series card front shows the poster with a `N FILMS · years` sticker, and tapping flips it to the numbered parts list (web `card-face.tsx`, mobile `series-face.tsx`). Results show "Start with: …" and link to `/collection/[id]`.
+- Step 6: the search grid card shows only the film count on the poster sticker; the full `N FILMS · years · rating` sits under the name, because a full label on a 150px poster truncated. The "Has Shrek 2" note only shows when the query names that part and not the series (`namesPart`).
+- Step 8 (e2e): new `e2e/series.spec.ts` (g)–(k). (i) swipes 30 cards of the fantasy deck (seed "abc", which holds the Harry Potter and Super Mario series on page 0) and checks each series appears once and none of its parts ever do. `e2e/screens.spec.ts` takes the docs screenshots when `SCREENS=1`.
