@@ -125,13 +125,13 @@ Brief: docs/V2_3_PROMPT.md. Branch `v2.3` from main at 8a48df5.
 
 - [x] M.1 Reproduce first. Core: one Hobbit film among unrelated titles stays `122917` instead of `c121938[122917]` (failing). Playwright (l) on production with the fantasy/US/seed `hob1` deck: "The Hobbit: The Battle of the Five Armies" dealt as a title, no "The Hobbit Collection" (failing). (m) on production: 30 cards dealt 12 films whose series have 2+ released parts (Hobbit, Avatar, LOTR, Minions, Wicked, …).
 - [x] M.2 Old counter diagnosed (findings below), one failing test per bug.
-- [ ] I.6 Round rule v2: 15 / +5 / 5 likes / 30, everywhere.
-- [ ] I.1 Grouping rule: a lone part with 2+ released parts is its series.
-- [ ] I.2 "New: …" / "Inside: …" label, highlighted part on the back and on /collection/[id].
-- [ ] I.3 Deck: dealt once, at the first hit.
-- [ ] I.4 TR series names: `[Seri]` → `Serisi`.
-- [ ] I.5 Thin titles (0 votes, no poster, no date) to the end of search, out of suggestions and the deck.
-- [ ] M.4 Tests green and screenshots.
+- [x] I.6 Round rule v2: `ROUND_FIRST 15`, `ROUND_EXTRA 5`, `LIKE_TARGET 5`, `MAX_VOTED 30` in `rounds.ts`; `LIKE_RATIO`/`likesNeeded`/`meetsRatio` deleted. One `roundState`, one `roomTape`, one `tapeText` (web, rooms, mobile). v1 links keep their 10-card size via their own constant in `link.ts`.
+- [x] I.1 Grouping rule: every film with a series becomes that series in `groupIntoCollections` (still one pass, one Map); `settleGroups` keeps it when 2+ films are released, otherwise plain titles (a failed load keeps its "Part of" tag, a one-film series doesn't).
+- [x] I.2 `seriesHit` + `seriesHitLabel`: "New: Zootopia 2" (latest film, out in the last 12 months) or "Inside: …"; none when the first film brought it in. Deck front (web, mobile), highlighted on the back, search card links to `/collection/[id]?part=…#part-…` with the row highlighted.
+- [x] I.3 Deck: series at the first hit, deduped across pages (client `appendPage`) and rounds (room `fillBook`), one card one vote.
+- [x] I.4 `seriesName`: `[Seri]` → `Serisi`, `[Animasyon-Seri]` → `Animasyon Serisi`, other brackets dropped; applied to summaries, collection pages, search, "Part of" tags. Table test.
+- [x] I.5 `isThin` / `buryThin` (search) / `dropThin` (suggestions, deck); an exact title match (case, accents, ı/i) survives.
+- [x] M.4 Tests green (core 167, Playwright 17 + 2 skipped live-only remote); screenshots in `.screens/` (counter 8/15 and 17/20, share on the 5th yes, Zootopia/Toy Story/Hobbit/Avatar fronts + backs at 375 and 1280, search hobbit EN/TR, search shrek). Note: search test (e) clicked "Only on my services" while the back-navigation re-render was landing (the panel remounts per URL); it now waits for network idle first.
 - [ ] M.5 Preview READY on v2.3, suite on preview, ff-merge, Production READY, suite and curls on production.
 - [ ] M.6 Cleanup branch.
 
