@@ -177,3 +177,14 @@ describe("namesPart", () => {
     ["matrix", "The Matrix Collection", "The Matrix Reloaded", false],
   ])("%s / %s / %s", (q, name, part, want) => expect(namesPart(q, name, part)).toBe(want));
 });
+
+describe("a lone part (v2.3)", () => {
+  it("one Hobbit film among unrelated titles is dealt as the Hobbit series", () => {
+    const hobbit: SeriesRef = { id: 121938, name: "The Hobbit Collection" };
+    const items = [t("movie", 1), t("movie", 122917), t("movie", 2)];
+    const grouped = groupIntoCollections(items, (id) => (id === 122917 ? hobbit : null));
+    const summary = toCollectionSummary(raw(121938, [{ id: 49051, date: "2012-12-12" }, { id: 57158, date: "2013-12-11" }, { id: 122917, date: "2014-12-10" }], { name: "The Hobbit Collection" }), new Map(), { now: NOW });
+    const settled = settleGroups(grouped, (id) => (id === 121938 ? summary : undefined));
+    expect(settled.map((g) => (g.kind === "title" ? `${g.item.id}` : `c${g.summary.id}[${g.hits.map((h) => h.id).join(",")}]`))).toEqual(["1", "c121938[122917]", "2"]);
+  });
+});

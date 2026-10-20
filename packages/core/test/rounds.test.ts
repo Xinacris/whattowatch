@@ -40,3 +40,31 @@ describe("roundState", () => {
     expect([10, 15, 20, 25, 30].map(likesNeeded)).toEqual([3, 5, 6, 8, 9]);
   });
 });
+
+/** Every state on the way through `seq`, one swipe at a time. */
+function replay(seq: string, extra = 40) {
+  const { votes, keys } = deck(seq, extra);
+  return keys.slice(0, seq.replace(/\s/g, "").length + 1).map((_, n) => {
+    const upTo = Object.fromEntries(Object.entries(votes).filter(([k]) => keys.indexOf(k as TitleKey) < n));
+    return roundState(upTo, keys);
+  });
+}
+
+describe("counter bugs seen on production", () => {
+  // (a) "NEED 9" on the tape while the round ended at 6: the tape and the round used two different numbers.
+  it.each(["LLL", "LLLLL", "NNLLNLL", "N".repeat(14) + "LLLLL", "N".repeat(12) + "LLL" + "N".repeat(8) + "LLL", "L" + "N".repeat(28) + "L"])(
+    "the target on the tape ends the round the moment it's reached: %s", (seq) => {
+      for (const r of replay(seq)) {
+        if (r.liked >= r.need) expect(r.phase).toBe("done");
+        if (r.phase === "done" && r.reason !== "cap" && r.reason !== "end") expect(r.liked).toBe(r.need);
+      }
+    });
+  // (b) "LIKED 0 · CARD 11": yeses on series cards dropped out of the count once the deck came back regrouped.
+  it("yeses on series cards still count when a reload regroups the deck", () => {
+    const votes: Record<string, Vote> = { "c:1": "like", "c:2": "like", "c:3": "like" };
+    const nopes = Array.from({ length: 7 }, (_, i) => `m${10 + i}` as TitleKey);
+    nopes.forEach((k) => { votes[k] = "nope"; });
+    const keys = ["m101", "m102", "m201", ...nopes, "m30", "m31", "m32", "m33", "m34", "m35"] as TitleKey[];
+    expect(roundState(votes, keys)).toMatchObject({ liked: 3, voted: 10 });
+  });
+});

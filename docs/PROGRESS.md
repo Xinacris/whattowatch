@@ -118,3 +118,25 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 8 (e2e): new `e2e/series.spec.ts` (g)–(k). (i) swipes 30 cards of the fantasy deck (seed "abc", which holds the Harry Potter and Super Mario series on page 0) and checks each series appears once and none of its parts ever do. `e2e/screens.spec.ts` takes the docs screenshots when `SCREENS=1`.
 - Step 8: `pnpm turbo run lint typecheck test build` exit 0 (22/22), core 135 tests. Playwright locally 15/15 (screens spec skipped). Git preview `whattowatch-4t6zpuujs-…` (8496b99) READY; `/`, `/search?q=shrek`, `/match/new` 200 via `vercel curl`, and the preview's shrek search has exactly one `data-collection="2150"`.
 - Step 8: `main` fast-forwarded to `9758f49` and pushed. Git-triggered production deploys `whattowatch-5m98vk0oq-…` and `whattowatch-match-qana17iy7-…` READY from `main`. Production `/`, `/search?q=shrek`, `/match/new`, `/api/health`, `/match/api/status` all 200 (`live:true, store:redis`). Full Playwright suite against production (with `E2E_LIVE=1`): 15/15.
+
+## v2.3
+
+Brief: docs/V2_3_PROMPT.md. Branch `v2.3` from main at 8a48df5.
+
+- [x] M.1 Reproduce first. Core: one Hobbit film among unrelated titles stays `122917` instead of `c121938[122917]` (failing). Playwright (l) on production with the fantasy/US/seed `hob1` deck: "The Hobbit: The Battle of the Five Armies" dealt as a title, no "The Hobbit Collection" (failing). (m) on production: 30 cards dealt 12 films whose series have 2+ released parts (Hobbit, Avatar, LOTR, Minions, Wicked, …).
+- [x] M.2 Old counter diagnosed (findings below), one failing test per bug.
+- [ ] I.6 Round rule v2: 15 / +5 / 5 likes / 30, everywhere.
+- [ ] I.1 Grouping rule: a lone part with 2+ released parts is its series.
+- [ ] I.2 "New: …" / "Inside: …" label, highlighted part on the back and on /collection/[id].
+- [ ] I.3 Deck: dealt once, at the first hit.
+- [ ] I.4 TR series names: `[Seri]` → `Serisi`.
+- [ ] I.5 Thin titles (0 votes, no poster, no date) to the end of search, out of suggestions and the deck.
+- [ ] M.4 Tests green and screenshots.
+- [ ] M.5 Preview READY on v2.3, suite on preview, ff-merge, Production READY, suite and curls on production.
+- [ ] M.6 Cleanup branch.
+
+### Findings: the old counter
+
+**(a) "NEED 9" at 20 cards, round ended at 6 likes.** Two different numbers ran the tape and the round. The tape printed `need = ceil(0.3 × round size)`. The round, though, only checked likes at the checkpoints (10, 15, 20, 25, 30), and at the 30-card cap it ended with any like at all. A probe over 200k random swipe runs of the old `roundState` found "NEED 9" only on cards 26–30 of 30. That's the last round, where the cap rule sends with 1+ likes. So the tape said 9 while the share screen came up at 6. It also went wrong the other way: the tape could read `LIKED 3 / NEED 3 · CARD 4 OF 10` and keep dealing until card 10. The likes target had been reached, but nothing happened. On top of that, live rooms computed `need` a third way (`likesNeeded(max(voted, deck − seen))`, and mobile rooms `likesNeeded(deck − seen)`). Test: "the target on the tape ends the round the moment it's reached" replays every swipe and asserts `liked >= need ⇒ done` and `done by likes ⇒ liked == need`. It fails on the old code (`LLL`: still swiping).
+
+**(b) "LIKED 0 / NEED 5 · CARD 11 OF 15" after a round with yeses.** Likes don't reset between rounds; `roundState` derives everything from the vote map. A yes on a `c:` card counts as long as that card is in the deck. The hole is that the old code only counted votes on keys that were in the *current* card list (`votedKeys(deck, votes)`). Swipes are restored from sessionStorage on reload (and on a TR/EN switch, which restarts the deck), but the cards are rebuilt from TMDB. Under v2.2 a series card existed only when 2+ parts landed on the same page and its collection loaded. So a rebuilt page could come back as separate titles (one 429 on `/collection/{id}` is enough), and every yes on `c:…` dropped out of the count. The parts came back as fresh cards, and nopes on them pushed the count to card 11 with 0 likes. Test: "yeses on series cards still count when a reload regroups the deck" (3 yeses on `c:` keys, 7 nopes, deck rebuilt as parts) expects 3 liked / 10 voted. It fails on the old code (`liked 0, voted 7`). Fix: the round counts every yes/no in the vote map, and votes whose card isn't in the list any more still go to the friend, after the listed ones.

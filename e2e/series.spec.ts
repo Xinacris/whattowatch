@@ -75,3 +75,36 @@ test("(k) zero-match results never say \"your turn\", in EN or TR", async ({ bro
     await expect(p.getByTestId("results").getByRole("button").or(p.getByTestId("results").getByRole("link"))).toHaveCount(2); // a results link has no one left to send to
   }
 });
+
+type ApiCard = { key: string; type: string; title: string; partOf?: { id: number }; collection?: { partCount: number } };
+const deckPage = async (seed: string, page: number, lang = "en") =>
+  (await (await fetch(`${BASE}/match/api/tmdb/deck?kind=movie&genres=fantasy&region=US&seed=${seed}&page=${page}&lang=${lang}`)).json() as { cards: ApiCard[] }).cards;
+
+// Fantasy, US, seed "hob1": page 0 holds The Battle of the Five Armies and no other Hobbit film.
+const HOB1 = "AwAAAFVTAAABDARob2IxAAA";
+
+test("(l) one Hobbit film on the page is dealt as the Hobbit series, and only once", async ({ browser }) => {
+  const a = await person(browser);
+  await a.goto(`/match/link?d=${HOB1}`);
+  await sitDown(a, "Ayşe");
+  const seen: string[] = [];
+  for (let n = 0; n < 16; n++) seen.push(await swipe(a, "ArrowLeft"));
+  expect(seen).toContain("The Hobbit Collection");
+  expect(seen.filter((t) => /^The Hobbit:/.test(t))).toEqual([]);
+  expect((await deckPage("hob1", 0, "tr")).map((c) => c.title)).toContain("Hobbit Serisi");
+});
+
+test("(m) 30 cards of a fresh deck: no film from a 2+ film series as its own card", async ({ browser }) => {
+  const a = await person(browser);
+  await a.goto(`/match/link?d=${HOB1}`);
+  await sitDown(a, "Ayşe");
+  const seen: string[] = [];
+  for (let n = 0; n < 29; n++) seen.push(await swipe(a, "ArrowLeft"));
+  seen.push(await finalSwipe(a, "ArrowLeft"));
+  const cards = (await Promise.all([0, 1, 2, 3].map((p) => deckPage("hob1", p)))).flat();
+  const dealt = seen.map((title) => cards.find((c) => c.title === title)).filter((c): c is ApiCard => Boolean(c));
+  expect(dealt.length).toBeGreaterThan(25);
+  const ids = [...new Set(dealt.flatMap((c) => (!c.collection && c.partOf ? [c.partOf.id] : [])))];
+  const series = ids.length ? await (await fetch(`${BASE}/match/api/tmdb/cards?keys=${ids.map((id) => `c:${id}`).join(".")}&region=US&lang=en`)).json() as ApiCard[] : [];
+  expect(series.filter((s) => (s.collection?.partCount ?? 0) >= 2).map((s) => s.title)).toEqual([]);
+});
