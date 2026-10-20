@@ -1,5 +1,10 @@
 import { expect, type Browser, type Page } from "@playwright/test";
 
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
+/** fetch() for the app's own API from the test runner, through preview protection when a bypass secret is set. */
+export const api = (url: string) => fetch(url, bypass ? { headers: { "x-vercel-protection-bypass": bypass } } : undefined);
+
 export async function person(browser: Browser): Promise<Page> {
   const ctx = await browser.newContext({ locale: "en-US" });
   await ctx.addCookies([{ name: "wtw_lang", value: "en", url: process.env.E2E_BASE_URL ?? "http://localhost:3024" }]);

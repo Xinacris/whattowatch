@@ -52,7 +52,8 @@ test("(e) filters live in the URL: reload and back keep them; only-my-services n
   await expect(filters.getByRole("button", { name: "Comedy" })).toHaveAttribute("aria-pressed", "true");
 
   // Only my services: pick one service, every result's logos include it.
-  await p.waitForLoadState("networkidle"); // back-navigation re-renders the filter panel; let it settle first
+  // The panel remounts when the back navigation's render lands; "Movie" unpressed means it has.
+  await expect(filters.getByRole("button", { name: "Movie", exact: true })).toHaveAttribute("aria-pressed", "false");
   const before = await p.getByTestId("search-result").allInnerTexts();
   await filters.getByTestId("only-mine").click();
   const service = filters.getByRole("button", { name: /Netflix/ });

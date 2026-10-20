@@ -1,5 +1,5 @@
 import { expect, test, type Browser } from "@playwright/test";
-import { finalSwipe, person, sitDown, swipe, topCard } from "./helpers";
+import { api, finalSwipe, person, sitDown, swipe, topCard } from "./helpers";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3024";
 
@@ -29,7 +29,7 @@ test("(h) TR, \"yüzüklerin efendisi\": the series card comes first", async ({ 
 test("(i) two parts on the first page become one card, and never come back later in the deck", async ({ browser }) => {
   // Fresh link: movies, fantasy, US, seed "abc". Page 0 of this deck holds several Harry Potter films.
   const token = "AwAAAFVTAAABDANhYmMAAA";
-  const page0 = await (await fetch(`${BASE}/match/api/tmdb/deck?kind=movie&genres=fantasy&region=US&seed=abc&page=0&lang=en`)).json() as { cards: { key: string; title: string; collection?: { parts: { title: string }[] } }[] };
+  const page0 = await (await api(`${BASE}/match/api/tmdb/deck?kind=movie&genres=fantasy&region=US&seed=abc&page=0&lang=en`)).json() as { cards: { key: string; title: string; collection?: { parts: { title: string }[] } }[] };
   const series = page0.cards.filter((c) => c.collection);
   expect(series.length).toBeGreaterThan(0);
   const parts = series.flatMap((s) => s.collection!.parts.map((p) => p.title));
@@ -78,7 +78,7 @@ test("(k) zero-match results never say \"your turn\", in EN or TR", async ({ bro
 
 type ApiCard = { key: string; type: string; title: string; partOf?: { id: number }; collection?: { partCount: number } };
 const deckPage = async (seed: string, page: number, lang = "en") =>
-  (await (await fetch(`${BASE}/match/api/tmdb/deck?kind=movie&genres=fantasy&region=US&seed=${seed}&page=${page}&lang=${lang}`)).json() as { cards: ApiCard[] }).cards;
+  (await (await api(`${BASE}/match/api/tmdb/deck?kind=movie&genres=fantasy&region=US&seed=${seed}&page=${page}&lang=${lang}`)).json() as { cards: ApiCard[] }).cards;
 
 // Fantasy, US, seed "hob1": page 0 holds The Battle of the Five Armies and no other Hobbit film.
 const HOB1 = "AwAAAFVTAAABDARob2IxAAA";
@@ -105,6 +105,6 @@ test("(m) 30 cards of a fresh deck: no film from a 2+ film series as its own car
   const dealt = seen.map((title) => cards.find((c) => c.title === title)).filter((c): c is ApiCard => Boolean(c));
   expect(dealt.length).toBeGreaterThan(25);
   const ids = [...new Set(dealt.flatMap((c) => (!c.collection && c.partOf ? [c.partOf.id] : [])))];
-  const series = ids.length ? await (await fetch(`${BASE}/match/api/tmdb/cards?keys=${ids.map((id) => `c:${id}`).join(".")}&region=US&lang=en`)).json() as ApiCard[] : [];
+  const series = ids.length ? await (await api(`${BASE}/match/api/tmdb/cards?keys=${ids.map((id) => `c:${id}`).join(".")}&region=US&lang=en`)).json() as ApiCard[] : [];
   expect(series.filter((s) => (s.collection?.partCount ?? 0) >= 2).map((s) => s.title)).toEqual([]);
 });
