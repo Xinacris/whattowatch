@@ -1,6 +1,0 @@
-$ next start --port 3001
-▲ Next.js 16.4.2
-- Local:         http://localhost:3001
-- Network:       http://192.168.1.124:3001
-✓ Ready in 97ms
-✓ Running next.config.ts took 142ms

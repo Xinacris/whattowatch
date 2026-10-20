@@ -132,7 +132,7 @@ Brief: docs/V2_3_PROMPT.md. Branch `v2.3` from main at 8a48df5.
 - [x] I.4 `seriesName`: `[Seri]` → `Serisi`, `[Animasyon-Seri]` → `Animasyon Serisi`, other brackets dropped; applied to summaries, collection pages, search, "Part of" tags. Table test.
 - [x] I.5 `isThin` / `buryThin` (search) / `dropThin` (suggestions, deck); an exact title match (case, accents, ı/i) survives.
 - [x] M.4 Tests green (core 167, Playwright 17 + 2 skipped live-only remote); screenshots in `.screens/` (counter 8/15 and 17/20, share on the 5th yes, Zootopia/Toy Story/Hobbit/Avatar fronts + backs at 375 and 1280, search hobbit EN/TR, search shrek). Note: search test (e) clicked "Only on my services" while the back-navigation re-render was landing (the panel remounts per URL); it now waits for network idle first.
-- [ ] M.5 Preview READY on v2.3, suite on preview, ff-merge, Production READY, suite and curls on production.
+- [x] M.5 Git Preview READY for web + match at 61f3a0c (v2.3); suite 18/18 on the preview (through the web project's automation bypass). ff-merged to main at a8cc716; Production READY for both (source git, ref main); suite 18/18 on production; curls 200. A stray `match.log` (6 lines of `next start` output) rode along in 61f3a0c; removed in a follow-up commit, `*.log` ignored.
 - [ ] M.6 Cleanup branch.
 
 ### Findings: the old counter

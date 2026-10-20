@@ -41,3 +41,6 @@ next-env.d.ts
 
 # Playwright screenshots (e2e/screens.spec.ts)
 .screens/
+
+# Local server logs
+*.log
