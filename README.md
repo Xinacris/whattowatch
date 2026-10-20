@@ -2,11 +2,15 @@
 
 Something to watch, found fast. Search first: type a title, an actor or half a memory, and suggestions show up as you type. Or browse with filters that live in the URL: under 100 minutes, only on the services you pay for, old but gold, Turkish only.
 
+A film series is one thing. Search "shrek" and you get one Shrek card (`4 FILMS · 2001–2010`), not four; its page lists the parts in order with where each one streams.
+
 When there's two of you, start a movie night. Everyone swipes the same stack: right is yes, left is no, up is "seen it". You find out what you agreed on at the end.
 
 **https://whattowatchxinny.vercel.app**
 
 ![The landing page: "What are we watching?" over a big search box, the movie-night door beside it, then shelves of posters](docs/screens/landing-1280.png)
+
+![Search for "shrek": one Shrek Collection card with a 4 FILMS sticker, then the specials and spin-offs](docs/screens/search-shrek-1280.png)
 
 ## Two ways to play
 
@@ -16,7 +20,7 @@ When there's two of you, start a movie night. Everyone swipes the same stack: ri
 
 **Live room.** One person sets up the night: movies or series, which services you pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone swipes the same deck at once. If anyone is under 30% when everyone is through, the room deals five more for all. Results show up for everyone once the last person finishes.
 
-A title makes the results when everyone liked it. If anyone marked it "seen it", it's out.
+A title makes the results when everyone liked it. If anyone marked it "seen it", it's out. Series are one card in the deck too: tap it to see what's in the box, and one vote counts for the whole series.
 
 ![The swipe deck mid-drag, card tilted with a YES stamp](docs/screenshot-deck.png)
 
@@ -31,12 +35,12 @@ No accounts. You're an anonymous device id plus whatever name you type.
 | `apps/web` | Next.js. Landing, search with filters, title, person and collection pages, `/api/suggest`, and the TMDB proxy at `/api/tmdb/*`. Default microfrontend; owns `microfrontends.json`. |
 | `apps/match` | Next.js, served under `/match`. Setup, lobby, rounds, share screen, results, room API. |
 | `apps/mobile` | Expo Router app with the same flow. Talks to the deployed web API, never to TMDB. |
-| `packages/core` | Plain TypeScript, no React. TMDB client and mappers, deck builder, seeded shuffle, round rule, results, link codec, search params, rooms, EN/TR strings. Unit tested. |
+| `packages/core` | Plain TypeScript, no React. TMDB client and mappers, deck builder, series grouping, seeded shuffle, round rule, results, link codec, search params, rooms, EN/TR strings. Unit tested. |
 | `packages/tokens` | Colours, type, spacing, swipe physics. Read by Tailwind on the web and by StyleSheet on mobile. |
-| `packages/ui` | Shared web pieces for both Next apps: shell, poster, provider list, server-only TMDB access. |
+| `packages/ui` | Shared web pieces for both Next apps: shell, poster, series card, provider list, server-only TMDB access and the cached title-meta loader. |
 | `packages/config` | Shared tsconfig and ESLint. |
 
-The two Next apps deploy as separate Vercel projects (`whattowatch-web`, `whattowatch-match`) in one microfrontends group, so `/match/*` is routed to the second one under the same domain.
+The two Next apps deploy as separate Vercel projects (`whattowatch-web`, `whattowatch-match`) in one microfrontends group, so `/match/*` is routed to the second one under the same domain. Both are connected to this repo: every push builds a preview, `main` deploys production, and `turbo-ignore` skips a project the commit doesn't touch.
 
 ## Running it
 
@@ -71,6 +75,7 @@ EXPO_PUBLIC_API_URL=https://whattowatchxinny.vercel.app npx expo start
 pnpm turbo run lint typecheck test build   # everything, including both mobile exports
 pnpm e2e                                    # Playwright: rounds, results, live rooms and search, locally
 E2E_BASE_URL=https://whattowatchxinny.vercel.app pnpm e2e   # the same against production (add E2E_LIVE=1 for live rooms)
+SCREENS=1 pnpm e2e e2e/screens.spec.ts                      # retake docs/screens
 ```
 
 ## Notes

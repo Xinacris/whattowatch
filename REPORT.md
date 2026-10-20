@@ -1,3 +1,31 @@
+# v2.2 report
+
+Brief: `docs/V2_2_PROMPT.md`. Film series are one card everywhere, the copy is cut down, and both Vercel projects deploy from GitHub.
+
+## Deploys: Git-connected now
+
+Both projects are connected to `Xinacris/whattowatch` (`vercel git connect`) with production branch `main`. Settings set through the Vercel API: root `apps/web` / `apps/match`, framework nextjs, install `pnpm install`, build `pnpm turbo run build --filter=<project>`, files outside the root included, ignored build step `npx turbo-ignore`. Every push builds a preview; a push to `main` deploys production. Previews are behind Vercel deployment protection, so check them with `vercel curl <path> --deployment <url>`.
+
+The first Git build failed: `.vercelignore` excluded `apps/mobile`, and the frozen lockfile then didn't match the workspace. Mobile sources are uploaded now but never built on Vercel.
+
+## What changed
+
+- **Series as one item.** `c:<id>` keys sit next to title keys (`ItemKey`). `groupIntoCollections` (one pass, one Map) collapses 2+ parts of a series into one entry where the first part was. `settleGroups` swaps in the loaded series, and returns to plain titles any series that failed to load or has fewer than two released parts. Unreleased parts are left out of counts, years and runtime.
+- **One meta loader.** `metaLoader(language, region)` in `@wtw/ui/server`: batches title lookups 8 at a time, with 429 backoff from the TMDB client. It reads the same details URL deck cards use, cached for 7 days, so grouping, runtime and service filters share one fetch per title. This fixes the v2.1 slow-search gap.
+- **Search.** Parts become a series card (`N FILMS` sticker, `N FILMS · years · rating`, service logos from any part). Series named by the query lead, ordered by where their films came up. "shrek 2" also looks up "shrek". A series passes a filter when at least one part does, and says "3 of 4 on TV+" when not all do. A lone part gets "Part of …". The old "Collections" sticker row is gone, and suggestions group the same way ("Şrek Koleksiyonu · 4 film").
+- **Collection page.** Tape label, name, "Where to start: <first part>", then every part in order with year, runtime, rating and streaming logos for the region. `?part=` highlights one.
+- **Deck.** Deck pages are grouped server-side. A series is never dealt twice, as a part or as the series, across pages (`appendPage`) and in rooms (`DeckBook.series`). A series card is one vote in the round rule. Tap flips to the numbered parts. Results show "Start with: Shrek (2001)" and link to the series.
+- **Codec v3.** `id * 3 + kind`; v1 and v2 links still decode. A 30-item (6 series), 3-voter link is 231 characters. A yes on a lone part counts as a yes on its series card when the deck has one.
+- **Copy diet.** See `docs/COPY.md`. Zero-match results show 2 buttons and a "More" link. The share and waiting screens are a headline, one line, the button and the link.
+
+## v2.2 known gaps
+
+- TMDB's own TR series names are shown as they are ("Şrek Koleksiyonu", "Yüzüklerin Efendisi [Seri]"), not rewritten to "… Serisi".
+- Rooms created before v2.2 have no series list in their book, so they can still deal a part after its series.
+- Seen-it on a lone part isn't lifted to its series in results (only likes are).
+
+---
+
 # v2.1 report
 
 Brief: `docs/V2_1_PROMPT.md`. Search became the front door; movie night became rounds with a results screen.
