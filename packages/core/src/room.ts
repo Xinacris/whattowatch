@@ -2,7 +2,7 @@ import type { RoomFilters } from "./filters";
 import type { Ballot, Vote } from "./match";
 import { matchesFromVoters } from "./results";
 import { CODE_LENGTH } from "./room-code";
-import { MAX_VOTED, meetsRatio, ROUND_EXTRA, ROUND_FIRST } from "./rounds";
+import { LIKE_TARGET, MAX_VOTED, ROUND_EXTRA, ROUND_FIRST } from "./rounds";
 import type { ItemKey } from "./item-key";
 
 export const ROOM_TTL_MS = 12 * 60 * 60 * 1000;
@@ -91,15 +91,13 @@ export interface RoomRound { done: boolean; pending: string[]; extendTo: number 
 
 /**
  * The round rule for a room: when every present member has voted on every card, and anyone is
- * under 30% yes, deal five more for everyone, up to 30. Otherwise the room is done.
+ * under five yeses, deal five more for everyone, up to 30. Nobody stops early: matches need
+ * overlapping votes. Otherwise the room is done.
  */
 export function roomRound(book: DeckBook, ballots: Readonly<Record<string, Ballot>>, present: readonly string[]): RoomRound {
   const pending = present.filter((id) => book.deck.some((k) => !ballots[id]?.[k]));
   if (!present.length || pending.length) return { done: false, pending, extendTo: null };
-  const below = present.some((id) => {
-    const votes = book.deck.map((k) => ballots[id]?.[k]);
-    return !meetsRatio(votes.filter((v) => v === "like").length, votes.filter((v) => v === "like" || v === "nope").length);
-  });
+  const below = present.some((id) => book.deck.filter((k) => ballots[id]?.[k] === "like").length < LIKE_TARGET);
   const canGrow = book.deck.length < MAX_VOTED && (book.pool.length > 0 || !book.exhausted);
   if (below && canGrow) return { done: false, pending, extendTo: Math.min(MAX_VOTED, book.deck.length + ROUND_EXTRA) };
   return { done: true, pending, extendTo: null };

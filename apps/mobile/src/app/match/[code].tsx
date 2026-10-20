@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { likesNeeded, listNames, normalizeRoomCode, ROUND_EXTRA, ROUND_FIRST, type ItemKey, type RoomView, type Vote } from "@wtw/core";
+import { listNames, normalizeRoomCode, roomTape, type ItemKey, type RoomView, type Vote } from "@wtw/core";
 import { DeckView } from "@/components/deck-view";
 import { NameGate } from "@/components/name-gate";
 import { ResultsView } from "@/components/results-view";
@@ -41,10 +41,7 @@ export default function Room() {
   if (!view) return <View style={s.screen}><Text style={[s.label, { padding: space[6] }]}>{t("common.loading")}</Text></View>;
 
   const send = (key: string, vote: Vote | null) => void api.vote(code, viewer, key as ItemKey, vote).then(apply, fail);
-  const mine = view.deck.map((k) => votes[k]);
-  const swiped = mine.filter(Boolean).length;
-  const seen = mine.filter((v) => v === "seen").length;
-  const grew = view.deck.length > ROUND_FIRST && swiped === view.deck.length - ROUND_EXTRA;
+  const tape = roomTape(view.deck, votes);
   const stage = stageOf(view, started || Boolean(first && Object.keys(first.mine).length), votes);
 
   return (
@@ -62,8 +59,8 @@ export default function Room() {
         </View>
       )}
       {stage === "deck" && (
-        <DeckView onVote={send} onUndo={(k) => send(k, null)} onLoosen={() => router.replace("/new")} banner={grew ? t("round.roomMore") : null}
-          header={<RoundCounter liked={mine.filter((v) => v === "like").length} need={likesNeeded(view.deck.length - seen)} card={Math.min(swiped + 1, view.deck.length)} of={view.deck.length} />} />
+        <DeckView onVote={send} onUndo={(k) => send(k, null)} onLoosen={() => router.replace("/new")} banner={tape.grew ? t("round.roomMore") : null}
+          header={<RoundCounter liked={tape.liked} card={tape.card} of={tape.of} />} />
       )}
       {stage === "waiting" && <Notice title={t("room.through")} body={view.waitingOn.length ? t("room.waitingFor", { names: listNames(lang, view.waitingOn) }) : t("common.loading")} />}
       {stage === "results" && <ResultsView results={view.results ?? []} names={view.members.map((m) => m.name)} onLoosen={() => router.replace("/new")} />}

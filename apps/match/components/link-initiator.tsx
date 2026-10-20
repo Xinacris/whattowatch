@@ -10,7 +10,7 @@ import { Deck } from "./deck";
 import { RoundCounter } from "./round-counter";
 import { ShareScreen } from "./share-screen";
 
-/** The person starting the night: rounds of 10, then 5, until 30% are yeses. */
+/** The person starting the night: 15 cards, then 5 more at a time, until five yeses or 30 cards. */
 export function LinkInitiator({ payload, name }: { payload: LinkPayload; name: string }) {
   const t = useT();
   useLinkDeck(payload, "initiator");
@@ -26,7 +26,7 @@ export function LinkInitiator({ payload, name }: { payload: LinkPayload; name: s
           onVote={() => {}}
           onUndo={() => {}}
           banner={round.phase === "extend" ? t("round.more") : null}
-          aside={<RoundCounter liked={round.liked} need={round.need} card={Math.min(round.voted + 1, round.target)} of={round.target} />}
+          aside={<RoundCounter liked={round.liked} card={Math.min(round.voted + 1, round.size)} of={round.size} />}
         />
       );
     case "done": {

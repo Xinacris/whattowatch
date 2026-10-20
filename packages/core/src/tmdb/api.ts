@@ -4,7 +4,7 @@ import { mapLimit, toTitleMeta, type MetaLoader, type TitleMeta } from "../movie
 import { toCollection, toDetail, toPerson, toPersonSummary, toSummaries, toProviders, toDeckCard } from "./mappers";
 import { parseTitleKey, titleKey, type CollectionDetail, type DeckCard, type MediaType, type PersonDetail, type PersonSummary, type Provider, type SearchResults, type TitleDetail, type TitleSummary } from "./models";
 import type { RawCollection, RawDetail, RawPage, RawPerson, RawProvider } from "./raw";
-import { discoverParams, mergeLists, searchTypes, type SearchFilters } from "../search";
+import { buryThin, discoverParams, dropThin, mergeLists, searchTypes, type SearchFilters } from "../search";
 
 export async function search(c: TmdbClient, query: string, language: string): Promise<SearchResults> {
   const q = query.trim();
@@ -90,7 +90,7 @@ export async function collection(c: TmdbClient, id: number, language: string): P
 
 export async function searchCollections(c: TmdbClient, query: string, language: string): Promise<{ id: number; name: string; poster: string | null }[]> {
   const page = await c.get<RawPage<RawCollection>>("/search/collection", { query, language });
-  return page.results.slice(0, 4).map((r) => ({ id: r.id, name: r.name, poster: toCollection(r).poster }));
+  return page.results.slice(0, 4).map((r) => { const s = toCollection(r); return { id: s.id, name: s.name, poster: s.poster }; });
 }
 
 /** Streaming services available in a region, most prominent first. Movie and TV lists merged. */
@@ -122,7 +122,7 @@ const thumb = (src: string | null) => (src ? src.replace(/\/w\d+\//, "/w92/") : 
 export async function suggest(c: TmdbClient, query: string, language: string, meta: MetaLoader): Promise<Suggestion[]> {
   const { titles, people } = await search(c, query, language);
   const ppl = people.filter((p) => p.photo || p.knownFor.length).slice(0, 2);
-  const grouped = await groupList(c, titles.slice(0, 12), language, meta);
+  const grouped = await groupList(c, dropThin(titles, query).slice(0, 12), language, meta);
   const tts = grouped.slice(0, 8 - ppl.length).map((g): Suggestion => g.kind === "collection"
     ? { kind: "collection", id: g.summary.id, type: null, label: g.summary.name, year: g.summary.yearFrom, image: thumb(g.summary.poster), count: g.summary.partCount }
     : { kind: "title", id: g.item.id, type: g.item.type, label: g.item.title, year: g.item.year, image: thumb(g.item.poster) });
@@ -146,7 +146,7 @@ export async function browse(c: TmdbClient, f: SearchFilters, region: string, la
 export async function searchPages(c: TmdbClient, f: SearchFilters, language: string): Promise<SearchRun> {
   const pages = await Promise.all(Array.from({ length: f.page }, (_, i) => c.get<RawPage>("/search/multi", { query: f.q, language, include_adult: false, page: i + 1 })));
   const all = pages.flatMap((p) => p.results);
-  const titles = mergeLists([toSummaries(all.filter((r) => r.media_type === "movie" || r.media_type === "tv"))]);
+  const titles = buryThin(mergeLists([toSummaries(all.filter((r) => r.media_type === "movie" || r.media_type === "tv"))]), f.q);
   const people = (pages[0]?.results ?? []).filter((r) => r.media_type === "person").map(toPersonSummary);
   const last = pages[pages.length - 1];
   return { titles, people, more: Boolean(last && last.page < last.total_pages) };

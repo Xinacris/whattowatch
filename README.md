@@ -2,7 +2,7 @@
 
 Something to watch, found fast. Search first: type a title, an actor or half a memory, and suggestions show up as you type. Or browse with filters that live in the URL: under 100 minutes, only on the services you pay for, old but gold, Turkish only.
 
-A film series is one thing. Search "shrek" and you get one Shrek card (`4 FILMS · 2001–2010`), not four; its page lists the parts in order with where each one streams.
+A film series is one thing, wherever it shows up. Search "shrek" and you get one Shrek card (`4 FILMS · 2001–2010`), not four. If the deck or a search turned up a later film, the card says which one: `NEW: ZOOTOPIA 2` or `INSIDE: THE BATTLE OF THE FIVE ARMIES`. The series page lists the films in order, with where each one streams.
 
 When there's two of you, start a movie night. Everyone swipes the same stack: right is yes, left is no, up is "seen it". You find out what you agreed on at the end.
 
@@ -14,11 +14,11 @@ When there's two of you, start a movie night. Everyone swipes the same stack: ri
 
 ## Two ways to play
 
-**Rounds.** Whoever starts votes 10 cards. If fewer than 30% are yeses, five more come, and so on up to 30. "Seen it" doesn't count; the next card takes its place. A tape counter always says where you are: `LIKED 2 / NEED 3 · CARD 7 OF 10`.
+**Rounds.** Whoever starts gets 15 cards and needs five yeses. The fifth yes sends you straight to the share screen, even mid-round. If the 15 run out first, five more come, up to 30; at 30 you send whatever you liked. "Seen it" doesn't count, and the next card takes its place. A tape counter always says where you are: `LIKED 3 / 5 · CARD 8 OF 15`.
 
 **Link mode.** No server state at all. When your rounds are done you get a link that carries the exact cards you voted on and your votes, and a screen that says how many you liked but not which. Your friend swipes exactly those cards, sees nothing until the last one, then gets the results: what you both said yes to, with where to watch it. They can send the results back, or add a third person to the same deck.
 
-**Live room.** One person sets up the night: movies or series, which services you pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone swipes the same deck at once. If anyone is under 30% when everyone is through, the room deals five more for all. Results show up for everyone once the last person finishes.
+**Live room.** One person sets up the night: movies or series, which services you pay for, up to three genres, a bedtime limit, new or old. That makes a room with a six-character code (no 0, O, 1 or I, so it survives being read out loud). Everyone swipes the same deck at once. Nobody stops early, since matches need overlapping votes. If anyone has fewer than five yeses when everyone is through, the room deals five more for everyone, up to 30. Results show up for everyone once the last person finishes.
 
 A title makes the results when everyone liked it. If anyone marked it "seen it", it's out. Series are one card in the deck too: tap it to see what's in the box, and one vote counts for the whole series.
 

@@ -1,3 +1,4 @@
+import { seriesName } from "../collections";
 import { tmdbImage, yearOf } from "../format";
 import { titleKey, type CastMember, type CollectionDetail, type DeckCard, type MediaType, type PersonDetail, type PersonSummary, type Provider, type ProviderKind, type TitleDetail, type TitleSummary } from "./models";
 import type { RawDetail, RawListItem, RawPerson, RawProvider, RawRegionProviders, RawCollection } from "./raw";
@@ -102,7 +103,7 @@ export function toDetail(d: RawDetail, type: MediaType, region: string): TitleDe
     trailer: trailer?.key ?? null,
     providers: toProviders(rp),
     providersLink: rp?.link ?? null,
-    collection: d.belongs_to_collection ? { id: d.belongs_to_collection.id, name: d.belongs_to_collection.name } : null,
+    collection: d.belongs_to_collection ? { id: d.belongs_to_collection.id, name: seriesName(d.belongs_to_collection.name) } : null,
     seasons: d.number_of_seasons ?? null,
   };
 }
@@ -113,7 +114,7 @@ export function toDeckCard(d: RawDetail, type: MediaType, region: string, only: 
   const unique = streamingOnly(toProviders(regionProviders(d, region)));
   const series = type === "movie" ? d.belongs_to_collection : null;
   return {
-    ...(series ? { partOf: { id: series.id, name: series.name } } : {}),
+    ...(series ? { partOf: { id: series.id, name: seriesName(series.name) } } : {}),
     ...summary,
     genreIds: (d.genres ?? []).map((g) => g.id),
     runtime: runtimeOf(d),
@@ -150,5 +151,5 @@ export function toPerson(p: RawPerson): PersonDetail {
 
 export function toCollection(c: RawCollection): CollectionDetail {
   const parts = toSummaries(c.parts, "movie").sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999));
-  return { id: c.id, name: c.name, overview: c.overview ?? "", poster: tmdbImage(c.poster_path, "w500"), backdrop: tmdbImage(c.backdrop_path, "w780"), parts };
+  return { id: c.id, name: seriesName(c.name ?? ""), overview: c.overview ?? "", poster: tmdbImage(c.poster_path, "w500"), backdrop: tmdbImage(c.backdrop_path, "w780"), parts };
 }

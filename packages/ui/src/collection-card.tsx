@@ -8,8 +8,10 @@ interface Props {
   summary: Pick<CollectionSummary, "id" | "name" | "poster" | "partCount" | "yearFrom" | "yearTo" | "rating">;
   lang: Lang;
   logos?: Provider[];
-  /** One short line under the label: "2 of 5 on Netflix", "Has Shrek 2", "Start with: Shrek (2001)". */
+  /** One short line under the label: "2 of 5 on Netflix", "Start with: Shrek (2001)". */
   note?: string | null;
+  /** Tape label for the film that brought the series in: "New: Zootopia 2", "Inside: …". */
+  hit?: string | null;
   href?: string;
   eager?: boolean;
   /** Just the box: no name or tape label (when both are printed next to it). */
@@ -20,7 +22,7 @@ interface Props {
  * A film series as one card, used by search, shelves and results. Drawn as a box set: the poster
  * with a second case peeking out behind it, so it never reads as a single title.
  */
-export function CollectionCard({ summary: s, lang, logos = [], note, href, eager = false, bare = false }: Props) {
+export function CollectionCard({ summary: s, lang, logos = [], note, hit, href, eager = false, bare = false }: Props) {
   const rating = formatRating(s.rating);
   return (
     <Link href={href ?? `/collection/${s.id}`} className="group block" data-testid="collection-card" data-collection={s.id}>
@@ -33,6 +35,7 @@ export function CollectionCard({ summary: s, lang, logos = [], note, href, eager
       </div>
       {!bare && <p className="mt-2 text-sm leading-tight font-semibold break-words group-hover:text-label">{s.name}</p>}
       {!bare && <p className="label mt-1 text-[11px] text-paper-dim">{[seriesLabel(lang, s), rating && `${rating}/10`].filter(Boolean).join(" · ")}</p>}
+      {hit && <p className="tape label mt-2 inline-block px-1.5 py-0.5 text-[10px] break-words" data-testid="series-hit">{hit}</p>}
       {note && <p className="label mt-1 text-[11px] text-label">{note}</p>}
       {logos.length > 0 && (
         <span className="mt-2 flex gap-1">

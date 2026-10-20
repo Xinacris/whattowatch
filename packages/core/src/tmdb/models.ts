@@ -1,5 +1,5 @@
 // What the apps render. Plain JSON so it crosses the network and the RN bridge untouched.
-import type { CollectionSummary, SeriesRef } from "../collections";
+import type { CollectionSummary, SeriesHit, SeriesRef } from "../collections";
 import type { ItemKey } from "../item-key";
 
 export type MediaType = "movie" | "tv";
@@ -70,10 +70,12 @@ export interface DeckCard extends Omit<TitleSummary, "key"> {
   genreNames: string[];
   providers: Provider[];
   cast: string[];
-  /** A lone part of a film series. */
+  /** The film's series, from its details. A title card only carries it when the series didn't load (or in an old link's fixed deck). */
   partOf?: SeriesRef;
   /** The whole series as one card; `title`, `year` and `poster` then describe the series. */
   collection?: CollectionSummary;
+  /** Series cards: the film that brought the series into the deck, when it isn't the first. */
+  hit?: SeriesHit;
 }
 
 export function titleKey(type: MediaType, id: number): TitleKey {

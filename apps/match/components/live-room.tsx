@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { listNames, ROUND_EXTRA, ROUND_FIRST, likesNeeded, type ItemKey, type RoomView, type Viewer, type Vote } from "@wtw/core";
+import { listNames, roomTape, type ItemKey, type RoomView, type Viewer, type Vote } from "@wtw/core";
 import { Notice, useT, usePrefs } from "@wtw/ui";
 import { api } from "@/lib/api";
 import { useDeck } from "@/lib/deck-store";
@@ -46,10 +46,7 @@ export function LiveRoom({ code }: { code: string }) {
 
   const send = (key: string, vote: Vote | null) => api.vote(code, viewer, key as ItemKey, vote).then(apply, fail);
   const resumed = first ? Object.keys(first.mine).length > 0 : false;
-  const mine = view.deck.map((k) => votes[k]);
-  const voted = mine.filter((v) => v === "like" || v === "nope").length;
-  const swiped = mine.filter(Boolean).length;
-  const grew = view.deck.length > ROUND_FIRST && swiped === view.deck.length - ROUND_EXTRA;
+  const tape = roomTape(view.deck, votes);
 
   const stage = stageOf(view, started || resumed, votes);
   return (
@@ -60,8 +57,8 @@ export function LiveRoom({ code }: { code: string }) {
         <Deck
           onVote={(key, vote) => void send(key, vote)}
           onUndo={(key) => void send(key, null)}
-          banner={grew ? t("round.roomMore") : null}
-          aside={<RoundCounter liked={mine.filter((v) => v === "like").length} need={likesNeeded(Math.max(voted, view.deck.length - mine.filter((v) => v === "seen").length))} card={Math.min(swiped + 1, view.deck.length)} of={view.deck.length} />}
+          banner={tape.grew ? t("round.roomMore") : null}
+          aside={<RoundCounter liked={tape.liked} card={tape.card} of={tape.of} />}
         />
       )}
       {stage === "waiting" && <Notice title={t("room.through")} body={view.waitingOn.length ? t("room.waitingFor", { names: listNames(lang, view.waitingOn) }) : t("common.loading")} />}

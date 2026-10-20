@@ -2,6 +2,23 @@ import { GENRES, genreIdsFor } from "./genres";
 import type { CollectionPart } from "./collections";
 import type { MediaType, Provider, TitleSummary } from "./tmdb/models";
 
+/** Folded for "is this exactly what they typed": case, Turkish dotted/dotless i and accents don't matter. */
+const exact = (x: string) => x.toLocaleLowerCase("tr").normalize("NFD").replace(/\p{M}/gu, "").replace(/ı/g, "i").replace(/\s+/g, " ").trim();
+
+/** No votes, no poster or no release date: a placeholder entry ("Shrek 6"), not something to watch tonight. */
+export const isThin = (s: Pick<TitleSummary, "rating" | "poster" | "year">) => s.rating === null || !s.poster || s.year === null;
+
+const named = (s: Pick<TitleSummary, "title">, query: string) => query.trim().length > 0 && exact(s.title) === exact(query);
+
+/** Search results: thin titles go to the end, unless the title is exactly the query. */
+export function buryThin<T extends Pick<TitleSummary, "rating" | "poster" | "year" | "title">>(items: readonly T[], query: string): T[] {
+  const keep = (s: T) => !isThin(s) || named(s, query);
+  return [...items.filter(keep), ...items.filter((s) => !keep(s))];
+}
+
+/** Suggestions and the deck: thin titles never show, unless the title is exactly the query. */
+export const dropThin = <T extends Pick<TitleSummary, "rating" | "poster" | "year" | "title">>(items: readonly T[], query = "") => items.filter((s) => !isThin(s) || named(s, query));
+
 // /search state lives in the URL. Parse anything, serialize only what differs from the defaults.
 
 export type SearchType = "all" | "movie" | "tv";

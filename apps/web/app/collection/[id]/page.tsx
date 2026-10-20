@@ -52,7 +52,7 @@ export default async function CollectionPage(props: Props) {
 function PartRow({ part: p, n, lang, on }: { part: CollectionPart; n: number; lang: Lang; on: boolean }) {
   const rating = formatRating(p.rating);
   return (
-    <li className={`tape flex items-center gap-4 p-3 ${on ? "border-label" : ""}`} data-testid="collection-part">
+    <li id={`part-${p.id}`} className={`tape flex scroll-mt-24 items-center gap-4 p-3 ${on ? "border-label text-label" : ""}`} data-testid="collection-part" aria-current={on || undefined}>
       <span className="display w-8 shrink-0 text-3xl text-paper-dim">{n}</span>
       <Link href={`/title/movie/${p.id}`} className="w-12 shrink-0"><Poster src={p.poster ? p.poster.replace("/w500/", "/w154/") : null} title={p.title} lang={lang} /></Link>
       <div className="min-w-0 flex-1">

@@ -1,10 +1,12 @@
 import type { Vote } from "./match";
 import type { ItemKey } from "./item-key";
+import type { Lang } from "./region";
+import { t } from "./strings";
 
 // The round rule, in one place. Web link mode, live rooms and mobile all read these.
-export const ROUND_FIRST = 10;
+export const ROUND_FIRST = 15;
 export const ROUND_EXTRA = 5;
-export const LIKE_RATIO = 0.3;
+export const LIKE_TARGET = 5;
 export const MAX_VOTED = 30;
 
 export type RoundPhase = "swiping" | "extend" | "done" | "capped-empty";
@@ -13,46 +15,54 @@ export interface RoundState {
   phase: RoundPhase;
   liked: number;
   voted: number; // yes + no; "seen it" never counts
-  target: number; // votes this round ends at: 10, 15, ... 30
-  need: number; // likes needed when this round ends
-  nextSize: number; // votes left in this round
-  /** Why the deck stopped: ratio hit, 30-card cap, or the shelf ran out. */
-  reason: "ratio" | "cap" | "end" | null;
+  need: number; // always LIKE_TARGET: the tape and the rule read the same number
+  size: number; // cards in this round: 15, 20, 25, 30
+  /** Why the deck stopped: five yeses, the 30-card cap, or the shelf ran out. */
+  reason: "likes" | "cap" | "end" | null;
 }
 
-/** ceil(0.3 × voted), without 0.1 + 0.2 surprises. */
-export const likesNeeded = (voted: number) => Math.ceil(voted * LIKE_RATIO - 1e-9);
-
-export const meetsRatio = (liked: number, voted: number) => voted > 0 && liked >= likesNeeded(voted);
-
-/** Ordered keys that got a yes or a no. This is what the friend swipes. */
-export function votedKeys(deck: readonly ItemKey[], votes: Readonly<Record<string, Vote>>): ItemKey[] {
-  return deck.filter((k) => votes[k] === "like" || votes[k] === "nope");
-}
-
-/** Votes land in deck order (you always swipe the top card), so likes at a checkpoint are a prefix count. */
-function targetFor(likedAt: (n: number) => number, voted: number): number {
-  let target = ROUND_FIRST;
-  while (voted >= target && !meetsRatio(likedAt(target), target) && target < MAX_VOTED) target += ROUND_EXTRA;
-  return target;
-}
+const counts = (v: Vote | undefined) => v === "like" || v === "nope";
 
 /**
- * Where the initiator is. Derived from votes alone, so undo just works: undoing the 10th vote
- * puts you back in round one. `deckDone` = TMDB has nothing more; then the round is what exists.
+ * Keys that got a yes or a no, in deck order. This is what the friend swipes. A vote whose card
+ * isn't in the list any more (the deck came back regrouped after a reload) still counts, after the rest.
+ */
+export function votedKeys(deck: readonly ItemKey[], votes: Readonly<Record<string, Vote>>): ItemKey[] {
+  const listed = new Set<string>(deck);
+  const orphans = Object.keys(votes).filter((k) => !listed.has(k) && counts(votes[k])) as ItemKey[];
+  return [...deck.filter((k) => counts(votes[k])), ...orphans];
+}
+
+/** 15 cards, then 5 more at a time while there are fewer than five yeses, up to 30. */
+export const roundSize = (voted: number) => Math.min(MAX_VOTED, voted < ROUND_FIRST ? ROUND_FIRST : ROUND_FIRST + ROUND_EXTRA * (Math.floor((voted - ROUND_FIRST) / ROUND_EXTRA) + 1));
+
+/**
+ * Where the initiator is. Derived from votes alone, so undo just works: undoing the fifth yes puts
+ * you back in the deck with four. `deckDone` = TMDB has nothing more; then the round is what exists.
  */
 export function roundState(votes: Readonly<Record<string, Vote>>, deck: readonly ItemKey[], deckDone = false): RoundState {
   const keys = votedKeys(deck, votes);
   const voted = keys.length;
-  const likedAt = (n: number) => keys.slice(0, n).filter((k) => votes[k] === "like").length;
-  const liked = likedAt(voted);
-  const target = targetFor(likedAt, voted);
-  const unvoted = deck.filter((k) => !votes[k]).length;
-  const outOfCards = deckDone && unvoted === 0 && voted < target;
-  const end = outOfCards ? voted : target;
-  const base = { liked, voted, target, need: likesNeeded(end), nextSize: Math.max(0, target - voted) };
-  if (voted < end) return { ...base, phase: target > ROUND_FIRST && voted === target - ROUND_EXTRA ? "extend" : "swiping", reason: null };
-  if (meetsRatio(likedAt(end), end)) return { ...base, phase: "done", reason: outOfCards ? "end" : "ratio" };
-  const reason = outOfCards ? "end" : "cap";
+  const liked = keys.filter((k) => votes[k] === "like").length;
+  const size = roundSize(voted);
+  const base = { liked, voted, need: LIKE_TARGET, size };
+  if (liked >= LIKE_TARGET) return { ...base, phase: "done", reason: "likes" };
+  const outOfCards = deckDone && deck.every((k) => votes[k]);
+  if (voted < MAX_VOTED && !outOfCards) {
+    return { ...base, phase: voted >= ROUND_FIRST && voted === size - ROUND_EXTRA ? "extend" : "swiping", reason: null };
+  }
+  const reason = outOfCards && voted < MAX_VOTED ? "end" : "cap";
   return { ...base, phase: liked > 0 ? "done" : "capped-empty", reason };
+}
+
+/** A live room member still swiping: their yeses against the same target, and where they are in the shared deck. */
+export function roomTape(deck: readonly ItemKey[], votes: Readonly<Record<string, Vote>>) {
+  const mine = deck.map((k) => votes[k]);
+  const swiped = mine.filter(Boolean).length;
+  return { liked: mine.filter((v) => v === "like").length, card: Math.min(swiped + 1, deck.length), of: deck.length, grew: deck.length > ROUND_FIRST && swiped === deck.length - ROUND_EXTRA };
+}
+
+/** The text on the tape. The target always comes from LIKE_TARGET. */
+export function tapeText(lang: Lang, p: { card: number; of: number; liked?: number }): string {
+  return p.liked === undefined ? t(lang, "round.counterFriend", { card: p.card, of: p.of }) : t(lang, "round.counter", { liked: p.liked, need: LIKE_TARGET, card: p.card, of: p.of });
 }

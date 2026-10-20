@@ -1,7 +1,7 @@
 import "server-only";
 import {
-  browse, collectionSummaries, groupList, seriesQuery, withNamedSeries, namesPart, isSearchMode, matchingParts, metaPasses, partPasses, searchCollections, searchPages, servicesWanted, summaryPasses,
-  type CollectionSummary, type ListItem, type Provider, type SearchFilters, type SearchRun, type SeriesRef, type TitleMeta, type TitleSummary,
+  browse, collectionSummaries, groupList, seriesHit, seriesQuery, withNamedSeries, isSearchMode, matchingParts, metaPasses, partPasses, searchCollections, searchPages, servicesWanted, summaryPasses,
+  type CollectionSummary, type ListItem, type Provider, type SearchFilters, type SearchRun, type SeriesHit, type SeriesRef, type TitleMeta, type TitleSummary,
 } from "@wtw/core";
 import { metaLoader, tmdb } from "@wtw/ui/server";
 
@@ -11,8 +11,8 @@ export type ResultEntry =
     kind: "collection";
     summary: CollectionSummary;
     logos: Provider[];
-    /** The part the search hit first ("shrek 2"), shown on the card. */
-    hit: { id: number; title: string; year: number | null } | null;
+    /** The film that brought the series in, when it isn't the first ("hobbit five armies"). */
+    hit: SeriesHit | null;
     /** Parts that pass the filters, when that's not all of them. */
     matching: number | null;
     /** The one service picked, for "2 of 5 on Netflix". */
@@ -67,11 +67,10 @@ function entryFor(g: ListItem<TitleSummary>, metas: Map<string, TitleMeta>, f: S
   if (!passing.length) return [];
   const all = passing.flatMap((p) => p.providers);
   const unique = all.filter((p, i) => all.findIndex((q) => q.id === p.id) === i);
-  const first = g.hits[0];
   const one = Array.isArray(wanted) && wanted.length === 1 ? wanted[0] : null;
   return [{
     kind: "collection", summary: s, logos: logosFrom(unique, only),
-    hit: first && namesPart(f.q, s.name, first.title) ? { id: first.id, title: first.title, year: first.year } : null,
+    hit: seriesHit(s, g.hits.map((h) => h.id)),
     matching: passing.length < s.partCount ? passing.length : null,
     service: one ? (unique.find((p) => p.id === one)?.name ?? null) : null,
   }];

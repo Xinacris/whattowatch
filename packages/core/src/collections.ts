@@ -69,7 +69,7 @@ export function toCollectionSummary(raw: RawCollection, metas: ReadonlyMap<Title
   return {
     key: collectionKey(raw.id),
     id: raw.id,
-    name: raw.name?.trim() || opts.fallbackName?.trim() || "",
+    name: seriesName(raw.name?.trim() || opts.fallbackName?.trim() || ""),
     overview: raw.overview ?? "",
     poster: tmdbImage(raw.poster_path, "w500") ?? parts[0]?.poster ?? null,
     backdrop: tmdbImage(raw.backdrop_path, "w780"),
@@ -86,26 +86,23 @@ export function toCollectionSummary(raw: RawCollection, metas: ReadonlyMap<Title
 interface Groupable { type: MediaType; id: number }
 
 export type Grouped<T> =
-  | { kind: "title"; item: T; partOf: SeriesRef | null }
+  | { kind: "title"; item: T }
   | { kind: "collection"; series: SeriesRef; parts: T[] };
 
 /**
- * One pass, one Map. Two or more parts of a series collapse into one entry where the first part was.
- * A lone part stays a title and says which series it's from. TV never groups.
+ * One pass, one Map. Every film that belongs to a series becomes that series, where its first part
+ * was, even when it's the only part in the list; later parts join it. Whether the series really has
+ * two released films is settled after it loads (`settleGroups`). TV never groups.
  */
 export function groupIntoCollections<T extends Groupable>(items: readonly T[], collectionOf: (movieId: number) => SeriesRef | null): Grouped<T>[] {
   const out: Grouped<T>[] = [];
-  const bySeries = new Map<number, number>(); // series id -> index in out
+  const bySeries = new Map<number, { kind: "collection"; series: SeriesRef; parts: T[] }>();
   for (const item of items) {
     const series = item.type === "movie" ? collectionOf(item.id) : null;
-    const at = series ? bySeries.get(series.id) : undefined;
-    const entry = at === undefined ? undefined : out[at];
-    if (!series || !entry) {
-      if (series) bySeries.set(series.id, out.length);
-      out.push({ kind: "title", item, partOf: series });
-      continue;
-    }
-    out[at as number] = entry.kind === "title" ? { kind: "collection", series, parts: [entry.item, item] } : { ...entry, parts: [...entry.parts, item] };
+    const entry = series ? bySeries.get(series.id) : undefined;
+    if (entry) entry.parts.push(item);
+    else if (series) { const g = { kind: "collection" as const, series, parts: [item] }; bySeries.set(series.id, g); out.push(g); }
+    else out.push({ kind: "title", item });
   }
   return out;
 }
@@ -115,23 +112,54 @@ export type ListItem<T> =
   | { kind: "collection"; summary: CollectionSummary; hits: T[] };
 
 /**
- * Swaps grouped entries for real series. A series that didn't load, or turns out to have fewer
- * than two released parts, goes back to being separate titles: shown ungrouped, never an error.
+ * Swaps grouped entries for real series: a series with 2+ released films is one entry, even if only
+ * one of them was in the list. One with fewer released films goes back to plain titles; one that
+ * didn't load goes back to titles that still say where they're from. Never an empty card, never an error.
  */
 export function settleGroups<T>(grouped: readonly Grouped<T>[], summaryOf: (id: number) => CollectionSummary | undefined): ListItem<T>[] {
   return grouped.flatMap((g): ListItem<T>[] => {
-    if (g.kind === "title") return [g];
+    if (g.kind === "title") return [{ ...g, partOf: null }];
     const summary = summaryOf(g.series.id);
     if (summary && summary.partCount >= 2) return [{ kind: "collection", summary, hits: g.parts }];
-    return g.parts.map((item) => ({ kind: "title" as const, item, partOf: g.series }));
+    return g.parts.map((item) => ({ kind: "title" as const, item, partOf: summary ? null : g.series }));
   });
+}
+
+/** The part that brought a series into a list, when it isn't the first film. */
+export interface SeriesHit { id: number; title: string; year: number | null; fresh: boolean }
+
+/**
+ * "New: Zootopia 2" when the hit is the latest film and came out in the last 12 months, otherwise
+ * "Inside: …". Null when the first hit is the first film: the cover already says that.
+ */
+export function seriesHit(s: Pick<CollectionSummary, "parts">, hitIds: readonly number[], now = new Date()): SeriesHit | null {
+  const part = hitIds.map((id) => s.parts.find((p) => p.id === id)).find((p) => p !== undefined);
+  if (!part || part === s.parts[0]) return null;
+  const yearAgo = new Date(now);
+  yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+  const fresh = part === s.parts[s.parts.length - 1] && part.releaseDate >= today(yearAgo);
+  return { id: part.id, title: part.title, year: part.year, fresh };
+}
+
+export const seriesHitLabel = (lang: Lang, h: Pick<SeriesHit, "title" | "fresh">) => t(lang, h.fresh ? "series.new" : "series.has", { title: h.title });
+
+/**
+ * TMDB's Turkish series names come as "Yüzüklerin Efendisi [Seri]". "[Seri]" -> "Serisi",
+ * "[Animasyon-Seri]" -> "Animasyon Serisi", any other bracket suffix just loses its brackets.
+ */
+export function seriesName(name: string): string {
+  return name.trim()
+    .replace(/\s*\[\s*seri\s*\]$/iu, " Serisi")
+    .replace(/\s*\[\s*([^\]]+?)-seri\s*\]$/iu, " $1 Serisi")
+    .replace(/\s*\[\s*([^\]]+?)\s*\]$/u, " $1")
+    .trim();
 }
 
 /** Parts that pass `test`. A series passes a filter when at least one part does. */
 export const matchingParts = (s: CollectionSummary, test: (p: CollectionPart) => boolean) => s.parts.filter(test);
 
-/** A series as one swipe card. Logos = services that have at least one part (limited to `only` when set). */
-export function collectionDeckCard(s: CollectionSummary, only: readonly number[] = []): DeckCard {
+/** A series as one swipe card. Logos = services that have at least one part (limited to `only` when set). `hit` = the part that brought it in. */
+export function collectionDeckCard(s: CollectionSummary, only: readonly number[] = [], hit: SeriesHit | null = null): DeckCard {
   const all = s.parts.flatMap((p) => p.providers);
   const unique = all.filter((p, i) => all.findIndex((q) => q.id === p.id) === i);
   return {
@@ -139,6 +167,7 @@ export function collectionDeckCard(s: CollectionSummary, only: readonly number[]
     genreIds: s.genreIds, runtime: s.runtime, genreNames: [], cast: [],
     providers: only.length ? unique.filter((p) => only.includes(p.id)) : unique.slice(0, 4),
     collection: s,
+    ...(hit ? { hit } : {}),
   };
 }
 
@@ -178,12 +207,4 @@ export function withNamedSeries<T extends { key: string }>(grouped: readonly Lis
   const pos = new Map(titles.map((t, i) => [t.key, i]));
   const firstHit = (g: ListItem<T>) => (g.kind === "collection" && g.hits.length ? Math.min(...g.hits.map((h) => pos.get(h.key) ?? Infinity)) : Infinity);
   return [...lists.filter(isNamed).sort((a, b) => firstHit(a) - firstHit(b)), ...lists.filter((g) => !isNamed(g))];
-}
-
-const fold = (x: string) => x.toLocaleLowerCase("tr").replace(/\s+/g, " ").trim();
-
-/** "Has Shrek 2" is worth a line only when the query names that part and not just the series. */
-export function namesPart(query: string, seriesName: string, partTitle: string): boolean {
-  const q = fold(query);
-  return q.length >= 2 && fold(partTitle).includes(q) && !fold(seriesName).includes(q);
 }

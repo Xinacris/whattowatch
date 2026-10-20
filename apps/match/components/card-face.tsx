@@ -1,5 +1,5 @@
 "use client";
-import { formatRating, formatRuntime, type CollectionSummary, type DeckCard } from "@wtw/core";
+import { formatRating, formatRuntime, seriesHitLabel, type CollectionSummary, type DeckCard } from "@wtw/core";
 import { Poster, seriesLabel, useT, usePrefs } from "@wtw/ui";
 
 function Stamp({ text, tone, opacity, className }: { text: string; tone: string; opacity: number; className: string }) {
@@ -26,7 +26,7 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
       <Stamp text={t("deck.like")} tone="var(--wtw-label)" opacity={like} className="top-6 left-5 -rotate-12" />
       <Stamp text={t("deck.nope")} tone="var(--wtw-nope)" opacity={nope} className="top-6 right-5 rotate-12" />
       <Stamp text={t("deck.seen")} tone="var(--wtw-paper)" opacity={seen} className="bottom-32 left-1/2 -translate-x-1/2 -rotate-3" />
-      {flipped && series ? <SeriesBack series={series} /> : flipped ? (
+      {flipped && series ? <SeriesBack series={series} hit={card.hit?.id ?? null} /> : flipped ? (
         <div className="flex-1 overflow-y-auto p-5">
           <p className="label text-paper-dim">{meta}</p>
           <p className="display mt-2 text-3xl break-words">{card.title}</p>
@@ -37,6 +37,7 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
         <div className="relative min-h-0 flex-1">
           <Poster src={card.poster} title={card.title} lang={lang} eager className="h-full w-full border-0 object-cover" />
           {series && <span className="sticker absolute top-3 left-3 rotate-[-2deg] text-sm" data-testid="series-label">{seriesLabel(lang, series)}</span>}
+          {card.hit && <span className="tape label absolute bottom-3 left-3 max-w-[85%] px-2 py-1 text-[11px] break-words" data-testid="series-hit">{seriesHitLabel(lang, card.hit)}</span>}
         </div>
       )}
       <div className="border-t-2 border-paper bg-shelf p-3">
@@ -59,11 +60,11 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
 }
 
 /** The back of a box set: every film in it, in order. */
-function SeriesBack({ series }: { series: CollectionSummary }) {
+function SeriesBack({ series, hit }: { series: CollectionSummary; hit: number | null }) {
   return (
     <ol className="flex-1 overflow-y-auto p-5" data-testid="series-back">
       {series.parts.map((p, i) => (
-        <li key={p.id} className="flex items-baseline gap-3 border-b-2 border-rule py-2 last:border-b-0">
+        <li key={p.id} className={`flex items-baseline gap-3 border-b-2 border-rule py-2 last:border-b-0 ${p.id === hit ? "text-label" : ""}`} aria-current={p.id === hit || undefined} data-hit={p.id === hit || undefined}>
           <span className="display w-6 shrink-0 text-2xl text-paper-dim">{i + 1}</span>
           <span className="min-w-0 flex-1 font-semibold break-words">{p.title}</span>
           <span className="label shrink-0 text-paper-dim">{[p.year, formatRuntime(p.runtime)].filter(Boolean).join(" · ")}</span>

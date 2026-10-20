@@ -2,7 +2,6 @@ import { fromBase64Url, Reader, toBase64Url, Writer } from "./bytes";
 import { sanitizeFilters, type Era, type Kind, type RoomFilters } from "./filters";
 import { GENRES } from "./genres";
 import type { Vote } from "./match";
-import { ROUND_FIRST } from "./rounds";
 import { itemKey, parseItemKey, type ItemKey, type ItemKind } from "./item-key";
 import { titleKey, type TitleKey } from "./tmdb/models";
 
@@ -169,10 +168,13 @@ export function decodeLink(token: string): LinkPayload | null {
   }
 }
 
+/** v1 links were written under the old 10-card first round; their decks keep that size. */
+const V1_ROUND_FIRST = 10;
+
 /** Old v1 links: the friend swipes the first max(10, initiator's votes) cards of the seed deck. */
 export function v1DeckSize(p: LinkPayload): number {
   const first = p.voters[0];
-  return Math.max(ROUND_FIRST, first ? new Set([...first.likes, ...first.seen]).size : 0);
+  return Math.max(V1_ROUND_FIRST, first ? new Set([...first.likes, ...first.seen]).size : 0);
 }
 
 export type LinkStage = "start" | "swipe" | "waiting" | "results" | "solo";

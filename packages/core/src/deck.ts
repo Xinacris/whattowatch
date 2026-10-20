@@ -2,7 +2,8 @@ import { kindsOf, type RoomFilters } from "./filters";
 import { genreIdsFor } from "./genres";
 import { seededShuffle } from "./random";
 import type { TmdbClient } from "./tmdb/client";
-import { collectionDeckCard, seriesOfCard } from "./collections";
+import { collectionDeckCard, seriesHit, seriesOfCard } from "./collections";
+import { dropThin } from "./search";
 import { mapLimit, type MetaLoader } from "./movie-meta";
 import { createMetaLoader, deckCard, groupList } from "./tmdb/api";
 import { toSummaries } from "./tmdb/mappers";
@@ -70,7 +71,7 @@ export async function buildDeckPage(c: TmdbClient, f: RoomFilters, seed: string,
   const queries = discoverQueries(f, page);
   if (!queries.length) return { page, cards: [], done: true };
   const pages = await Promise.all(queries.map((q) => c.get<RawPage>(`/discover/${q.type}`, q.params)));
-  const lists = pages.map((p, i) => toSummaries(p.results, queries[i]?.type));
+  const lists = pages.map((p, i) => dropThin(toSummaries(p.results, queries[i]?.type)));
   const done = pages.every((p) => p.page >= p.total_pages);
   const order = arrangeDeckPage(lists, seed, page);
   const settled = await mapLimit(order, 8, (s) => deckCard(c, s.type, s.id, language, f.region, f.providers));
@@ -78,12 +79,12 @@ export async function buildDeckPage(c: TmdbClient, f: RoomFilters, seed: string,
   // Runtime is checked per part, before grouping: a series is never "too long" for adding up.
   const fits = f.maxRuntime ? cards.filter((card) => !card.runtime || card.runtime <= (f.maxRuntime as number)) : cards;
   const items = await groupList(c, fits, language, meta ?? createMetaLoader(c, language, f.region), (card) => card.partOf ?? null);
-  return { page, cards: items.map((i) => (i.kind === "title" ? i.item : collectionDeckCard(i.summary, f.providers))), done };
+  return { page, cards: items.map((i) => (i.kind === "title" ? i.item : collectionDeckCard(i.summary, f.providers, seriesHit(i.summary, i.hits.map((h) => h.id))))), done };
 }
 
 /**
  * Appends a fetched page to what the client already holds, never repeating a title, and never a
- * series: once Shrek (the series, or one lone part) is in the deck, later parts stay out.
+ * series: once Shrek is in the deck (as its series card, or a part whose series didn't load), it stays dealt once.
  */
 export function appendPage(deck: DeckCard[], next: DeckCard[]): DeckCard[] {
   const have = new Set<string>(deck.map((c) => c.key));

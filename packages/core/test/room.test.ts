@@ -42,27 +42,27 @@ async function swipeAll(s: RoomStore, who: typeof A, likes: number, now: number,
 }
 
 describe("live rooms", () => {
-  it("deals 10 to start; results stay hidden until everyone is through", async () => {
+  it("deals 15 to start; results stay hidden until everyone is through", async () => {
     const deal = dealer();
     const s = await room(deal);
     await syncRoom(s, "ABC234", A, 1, deal);
     await syncRoom(s, "ABC234", B, 1, deal);
-    const a = await swipeAll(s, A, 4, 2, deal);
+    const a = await swipeAll(s, A, 6, 2, deal);
     expect(a.ok && a.value).toMatchObject({ done: false, results: null, waitingOn: ["Burak"] });
-    expect(a.ok && a.value.deck).toHaveLength(10);
-    const b = await swipeAll(s, B, 3, 3, deal);
-    expect(b.ok && b.value).toMatchObject({ done: true, waitingOn: [], results: ["m1", "m2", "m3"] });
+    expect(a.ok && a.value.deck).toHaveLength(15);
+    const b = await swipeAll(s, B, 5, 3, deal);
+    expect(b.ok && b.value).toMatchObject({ done: true, waitingOn: [], results: ["m1", "m2", "m3", "m4", "m5"] });
   });
-  it("anyone under 30% deals five more for everyone, once, even when both finish together", async () => {
+  it("one member at 3 yeses deals five more for everyone, once, even when both finish together", async () => {
     const deal = dealer();
     const s = await room(deal);
     await syncRoom(s, "ABC234", A, 1, deal);
     await syncRoom(s, "ABC234", B, 1, deal);
     const view = await syncRoom(s, "ABC234", A, 1, deal);
     const keys = view.ok ? view.value.deck : [];
-    for (const k of keys) { await s.setVote("ABC234", "a", k, keys.indexOf(k) < 4 ? "like" : "nope"); await s.setVote("ABC234", "b", k, keys.indexOf(k) < 1 ? "like" : "nope"); }
+    for (const k of keys) { await s.setVote("ABC234", "a", k, keys.indexOf(k) < 6 ? "like" : "nope"); await s.setVote("ABC234", "b", k, keys.indexOf(k) < 3 ? "like" : "nope"); }
     const [x, y] = await Promise.all([syncRoom(s, "ABC234", A, 2, deal), syncRoom(s, "ABC234", B, 2, deal)]);
-    expect((await s.get("ABC234"))?.book.deck).toHaveLength(15);
+    expect((await s.get("ABC234"))?.book.deck).toHaveLength(20);
     expect([x, y].map((r) => r.ok && r.value.done)).toEqual([false, false]);
     expect(y.ok && y.value.waitingOn.sort()).toEqual(["Ayşe", "Burak"]);
   });
@@ -118,7 +118,7 @@ describe("live rooms", () => {
 describe("dealing film series", () => {
   it("never deals a second card from a series already in the room deck", async () => {
     const deal = seriesDealer();
-    const first = await firstBook(filters, "seed", deal);
+    const first = await fillBook({ deck: [], pool: [], page: 0, exhausted: false }, 10, filters, "seed", deal);
     const tens = Array.from({ length: 7 }, (_, i) => `m${i + 10}`);
     expect(first.deck).toEqual(["m1", "m3", ...tens, "m40"]);
     expect(first.series).toEqual([900]);

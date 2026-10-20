@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { formatRating, type DeckCard, type Lang, type Provider } from "@wtw/core";
+import { formatRating, seriesHitLabel, type DeckCard, type Lang, type Provider } from "@wtw/core";
 import { CollectionCard, Poster, useT, usePrefs } from "@wtw/ui";
 import type { ResultEntry } from "@/lib/search";
 
@@ -29,7 +29,7 @@ export function ResultGrid({ items }: { items: ResultEntry[] }) {
       {items.map((entry, i) => (
         <li key={entry.kind === "title" ? entry.item.key : entry.summary.key} data-testid="search-result">
           {entry.kind === "collection"
-            ? <CollectionCard summary={entry.summary} lang={lang} logos={entry.logos} note={seriesNote(entry, t)} eager={i < 6} href={entry.hit ? `/collection/${entry.summary.id}?part=${entry.hit.id}` : undefined} />
+            ? <CollectionCard summary={entry.summary} lang={lang} logos={entry.logos} note={seriesNote(entry, t)} hit={entry.hit && seriesHitLabel(lang, entry.hit)} eager={i < 6} href={entry.hit ? `/collection/${entry.summary.id}?part=${entry.hit.id}#part-${entry.hit.id}` : undefined} />
             : <TitleCard entry={entry} logos={(entry.logos ?? late[entry.item.key] ?? []).slice(0, 3)} lang={lang} t={t} eager={i < 6} />}
         </li>
       ))}
@@ -39,8 +39,8 @@ export function ResultGrid({ items }: { items: ResultEntry[] }) {
 
 function seriesNote(e: Extract<ResultEntry, { kind: "collection" }>, t: Translate): string | null {
   const of = e.summary.partCount;
-  if (e.matching !== null) return e.service ? t("series.onService", { n: e.matching, of, service: e.service }) : t("series.matching", { n: e.matching, of });
-  return e.hit ? t("series.has", { title: e.hit.title }) : null;
+  if (e.matching === null) return null;
+  return e.service ? t("series.onService", { n: e.matching, of, service: e.service }) : t("series.matching", { n: e.matching, of });
 }
 
 function TitleCard({ entry, logos, lang, t, eager }: { entry: Extract<ResultEntry, { kind: "title" }>; logos: Provider[]; lang: Lang; t: Translate; eager: boolean }) {

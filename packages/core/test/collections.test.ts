@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendPage, collectionDeckCard, groupIntoCollections, seriesQuery, withNamedSeries, namesPart, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
+  buryThin, dropThin, seriesHit, seriesHitLabel, seriesName,
+  appendPage, collectionDeckCard, groupIntoCollections, seriesQuery, withNamedSeries, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
   type CollectionSummary, type DeckCard, type ItemKey, type MediaType, type RawCollection, type SeriesRef, type TitleMeta,
 } from "../src";
 
@@ -28,14 +29,14 @@ describe("item keys", () => {
 const SERIES: Record<number, SeriesRef> = { 808: { id: 2150, name: "Shrek" }, 809: { id: 2150, name: "Shrek" }, 810: { id: 2150, name: "Shrek" }, 120: { id: 119, name: "LOTR" }, 121: { id: 119, name: "LOTR" } };
 const of = (id: number) => SERIES[id] ?? null;
 const shape = (items: ReturnType<typeof groupIntoCollections>) =>
-  items.map((g) => (g.kind === "title" ? (g.partOf ? `${g.item.id}<${g.partOf.id}` : `${g.item.id}`) : `c${g.series.id}[${g.parts.map((p) => p.id).join(",")}]`));
+  items.map((g) => (g.kind === "title" ? `${g.item.id}` : `c${g.series.id}[${g.parts.map((p) => p.id).join(",")}]`));
 
 describe("groupIntoCollections", () => {
   it.each([
     ["nothing to group", [t("movie", 1), t("tv", 2)], ["1", "2"]],
     ["two parts collapse at the first one's place", [t("movie", 1), t("movie", 809), t("movie", 5), t("movie", 808)], ["1", "c2150[809,808]", "5"]],
     ["three parts, one card", [t("movie", 808), t("movie", 809), t("movie", 810)], ["c2150[808,809,810]"]],
-    ["a lone part stays a title and says where it's from", [t("movie", 120), t("movie", 7)], ["120<119", "7"]],
+    ["a lone part becomes its series, where it was", [t("movie", 7), t("movie", 120), t("movie", 8)], ["7", "c119[120]", "8"]],
     ["two series side by side", [t("movie", 120), t("movie", 808), t("movie", 121), t("movie", 809)], ["c119[120,121]", "c2150[808,809]"]],
     ["TV never groups, even with a clashing id", [t("tv", 808), t("tv", 809)], ["808", "809"]],
     ["a deck that is only series", [t("movie", 808), t("movie", 120), t("movie", 810), t("movie", 121)], ["c2150[808,810]", "c119[120,121]"]],
@@ -95,7 +96,7 @@ describe("settleGroups", () => {
   it("a series with only one released part stays a title", () => {
     const out = settleGroups(groupIntoCollections([t("movie", 120), t("movie", 121)], of), () => summary(119, 1));
     expect(out.map((i) => i.kind)).toEqual(["title", "title"]);
-    expect(out[0]?.kind === "title" && out[0].partOf?.id).toBe(119);
+    expect(out[0]?.kind === "title" && out[0].partOf).toBe(null); // no tag pointing at a one-film "series"
   });
 });
 
@@ -168,23 +169,72 @@ describe("search: series named by the query", () => {
   });
 });
 
-describe("namesPart", () => {
+describe("seriesName", () => {
   it.each([
-    ["shrek 2", "Shrek Collection", "Shrek 2", true],
-    ["shrek", "Shrek Collection", "Shrek 2", false],
-    ["yüzüklerin efendisi", "Yüzüklerin Efendisi [Seri]", "Yüzüklerin Efendisi: İki Kule", false],
-    ["İKİ KULE", "Yüzüklerin Efendisi [Seri]", "Yüzüklerin Efendisi: İki Kule", true],
-    ["matrix", "The Matrix Collection", "The Matrix Reloaded", false],
-  ])("%s / %s / %s", (q, name, part, want) => expect(namesPart(q, name, part)).toBe(want));
+    ["Yüzüklerin Efendisi [Seri]", "Yüzüklerin Efendisi Serisi"],
+    ["Hobbit [Seri]", "Hobbit Serisi"],
+    ["Oyuncak Hikayesi [Animasyon-Seri]", "Oyuncak Hikayesi Animasyon Serisi"],
+    ["Zootropolis [Animasyon Seri]", "Zootropolis Animasyon Seri"],
+    ["Avatar [Koleksiyon]", "Avatar Koleksiyon"],
+    ["The Hobbit Collection", "The Hobbit Collection"],
+    ["  Shrek Serisi ", "Shrek Serisi"],
+    ["", ""],
+  ])("%s -> %s", (raw, want) => expect(seriesName(raw)).toBe(want));
 });
 
-describe("a lone part (v2.3)", () => {
-  it("one Hobbit film among unrelated titles is dealt as the Hobbit series", () => {
-    const hobbit: SeriesRef = { id: 121938, name: "The Hobbit Collection" };
-    const items = [t("movie", 1), t("movie", 122917), t("movie", 2)];
-    const grouped = groupIntoCollections(items, (id) => (id === 122917 ? hobbit : null));
-    const summary = toCollectionSummary(raw(121938, [{ id: 49051, date: "2012-12-12" }, { id: 57158, date: "2013-12-11" }, { id: 122917, date: "2014-12-10" }], { name: "The Hobbit Collection" }), new Map(), { now: NOW });
-    const settled = settleGroups(grouped, (id) => (id === 121938 ? summary : undefined));
-    expect(settled.map((g) => (g.kind === "title" ? `${g.item.id}` : `c${g.summary.id}[${g.hits.map((h) => h.id).join(",")}]`))).toEqual(["1", "c121938[122917]", "2"]);
+describe("seriesHit: the film that brought a series in", () => {
+  const zoo = toCollectionSummary(raw(1, [{ id: 10, date: "2016-03-04", title: "Zootopia" }, { id: 11, date: "2025-11-26", title: "Zootopia 2" }]), new Map(), { now: NOW });
+  const hobbit = toCollectionSummary(raw(2, [{ id: 20, date: "2012-12-12", title: "An Unexpected Journey" }, { id: 21, date: "2013-12-11", title: "The Desolation of Smaug" }, { id: 22, date: "2014-12-10", title: "The Battle of the Five Armies" }]), new Map(), { now: NOW });
+  it.each([
+    ["latest film, out this year: New", zoo, [11], { title: "Zootopia 2", fresh: true }, "Yeni: Zootopia 2"],
+    ["latest film, years old: Inside", hobbit, [22], { title: "The Battle of the Five Armies", fresh: false }, "İçinde: The Battle of the Five Armies"],
+    ["a middle film: Inside", hobbit, [21, 20], { title: "The Desolation of Smaug", fresh: false }, "İçinde: The Desolation of Smaug"],
+  ] as const)("%s", (_n, s, ids, want, label) => {
+    const h = seriesHit(s, ids, NOW);
+    expect(h).toMatchObject(want);
+    expect(h && seriesHitLabel("tr", h)).toBe(label);
+  });
+  it("no label when the first film brought it in, or the hit isn't released", () => {
+    expect(seriesHit(hobbit, [20, 22], NOW)).toBe(null);
+    expect(seriesHit(hobbit, [999], NOW)).toBe(null);
+  });
+  it("EN reads New / Inside", () => {
+    expect(seriesHitLabel("en", { title: "Zootopia 2", fresh: true })).toBe("New: Zootopia 2");
+    expect(seriesHitLabel("en", { title: "Toy Story 4", fresh: false })).toBe("Inside: Toy Story 4");
+  });
+});
+
+describe("the v2.3 rule, edge cases", () => {
+  const two = (id: number) => (id === 31 ? { id: 3, name: "New Series" } : null);
+  it("2 released films + 1 announced: one entry, 2 films", () => {
+    const s = toCollectionSummary(raw(3, [{ id: 30, date: "2019-01-01" }, { id: 31, date: "2024-01-01" }, { id: 32, date: "2027-06-01" }]), new Map(), { now: NOW });
+    const out = settleGroups(groupIntoCollections([t("movie", 31)], two), () => s);
+    expect(out[0]?.kind === "collection" && out[0].summary.partCount).toBe(2);
+  });
+  it("only one released film, and it's the hit: stays a title", () => {
+    const s = toCollectionSummary(raw(3, [{ id: 31, date: "2024-01-01" }, { id: 32, date: "2027-06-01" }]), new Map(), { now: NOW });
+    expect(settleGroups(groupIntoCollections([t("movie", 31)], two), () => s).map((i) => i.kind)).toEqual(["title"]);
+  });
+  it("the series failed to load: a title that still says where it's from", () => {
+    const out = settleGroups(groupIntoCollections([t("movie", 31)], two), () => undefined);
+    expect(out).toEqual([{ kind: "title", item: t("movie", 31), partOf: { id: 3, name: "New Series" } }]);
+  });
+  it("one series reached through two films on two pages is dealt once", () => {
+    const series = (hit: number) => card("c:3" as ItemKey, { collection: { id: 3 } as CollectionSummary, hit: { id: hit, title: "", year: null, fresh: false } });
+    const deck = appendPage(appendPage([], [card("m1"), series(31)]), [series(30), card("m2")]);
+    expect(deck.map((c) => c.key)).toEqual(["m1", "c:3", "m2"]);
+  });
+});
+
+describe("thin titles", () => {
+  const item = (title: string, extra: Partial<{ rating: number | null; poster: string | null; year: number | null }> = {}) => ({ title, rating: 7, poster: "/p.jpg", year: 2001, ...extra });
+  const list = [item("Shrek 6", { rating: null, year: null, poster: null }), item("Shrek"), item("Shrek Extra", { poster: null }), item("Shrek 2")];
+  it.each([
+    ["search: thin ones go last", "shrek", ["Shrek", "Shrek 2", "Shrek 6", "Shrek Extra"]],
+    ["search: unless the title is exactly the query", "SHREK 6", ["Shrek 6", "Shrek", "Shrek 2", "Shrek Extra"]],
+  ])("%s", (_n, q, want) => expect(buryThin(list, q).map((i) => i.title)).toEqual(want));
+  it("suggestions and the deck drop them; exact match (any case or accent) survives", () => {
+    expect(dropThin(list).map((i) => i.title)).toEqual(["Shrek", "Shrek 2"]);
+    expect(dropThin([item("Işık", { rating: null })], "isik").map((i) => i.title)).toEqual(["Işık"]);
   });
 });

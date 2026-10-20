@@ -15,7 +15,7 @@ const url = (token: string) => `${API_URL}/match/link?d=${token}`;
 const loosen = () => router.replace("/new");
 export const swap = (p: LinkPayload) => () => router.replace({ pathname: "/match/link", params: { d: swapLink(p, makeSeed()) } });
 
-/** Initiator: rounds of 10, then 5, until 30% are yeses. Same core rule as the web. */
+/** Initiator: 15 cards, then 5 more at a time, until five yeses or 30 cards. Same core rule as the web. */
 export function Initiator({ payload, name }: { payload: LinkPayload; name: string }) {
   const { t, lang } = usePrefs();
   useEffect(() => { deck.start(payload.filters, payload.seed, lang); }, [payload, lang]);
@@ -26,7 +26,7 @@ export function Initiator({ payload, name }: { payload: LinkPayload; name: strin
     case "swiping":
     case "extend":
       return <DeckView onVote={() => {}} onUndo={() => {}} onLoosen={loosen} banner={round.phase === "extend" ? t("round.more") : null}
-        header={<RoundCounter liked={round.liked} need={round.need} card={Math.min(round.voted + 1, round.target)} of={round.target} />} />;
+        header={<RoundCounter liked={round.liked} card={Math.min(round.voted + 1, round.size)} of={round.size} />} />;
     case "done": {
       const keys = votedKeys(order, votes);
       const note = round.reason === "cap" ? t("share.picky") : round.reason === "end" ? t("share.shelfEnd") : null;

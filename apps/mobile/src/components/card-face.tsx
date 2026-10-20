@@ -3,7 +3,7 @@ import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reani
 import { formatRating, formatRuntime, seriesLabel, type DeckCard } from "@wtw/core";
 import { usePrefs } from "@/lib/prefs";
 import { colors, font, fontSize, s } from "@/lib/theme";
-import { SeriesBack, SeriesSticker } from "./series-face";
+import { SeriesBack, SeriesHitTape, SeriesSticker } from "./series-face";
 
 function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: SharedValue<number>; y: SharedValue<number>; side: "like" | "nope" | "seen" }) {
   const style = useAnimatedStyle(() => {
@@ -28,7 +28,7 @@ export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boo
       <Stamp text={t("deck.like")} tone={colors.label} x={x} y={y} side="like" />
       <Stamp text={t("deck.nope")} tone={colors.nope} x={x} y={y} side="nope" />
       <Stamp text={t("deck.seen")} tone={colors.paper} x={x} y={y} side="seen" />
-      {flipped && series ? <SeriesBack series={series} /> : flipped ? (
+      {flipped && series ? <SeriesBack series={series} hit={card.hit?.id ?? null} /> : flipped ? (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
           <Text style={s.label}>{meta}</Text>
           <Text style={[s.display, { fontSize: fontSize["2xl"] }]}>{card.title}</Text>
@@ -39,6 +39,7 @@ export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boo
         <View style={{ flex: 1 }}>
           <Image source={{ uri: card.poster }} style={{ flex: 1 }} resizeMode="cover" accessibilityLabel={card.title} />
           {series && <SeriesSticker series={series} lang={lang} />}
+          {card.hit && <SeriesHitTape hit={card.hit} lang={lang} />}
         </View>
       ) : (
         <View style={{ flex: 1, justifyContent: "space-between", padding: 16, backgroundColor: colors.shelfHigh }}>
