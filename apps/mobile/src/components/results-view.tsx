@@ -1,12 +1,13 @@
 import { Image, Linking, ScrollView, Share, Text, View } from "react-native";
-import { formatRating, formatRuntime, listNames, type DeckCard, type TitleKey } from "@wtw/core";
+import { formatRating, formatRuntime, itemHref, listNames, seriesLabel, type DeckCard, type ItemKey } from "@wtw/core";
 import { API_URL } from "@/lib/env";
 import { useCards } from "@/lib/hooks";
 import { usePrefs } from "@/lib/prefs";
 import { colors, fontSize, s, space } from "@/lib/theme";
+import { SeriesSticker } from "./series-face";
 import { Btn } from "./ui";
 
-interface Props { results: TitleKey[]; names: string[]; sendBack?: string | null; addPerson?: string | null; onSwap?: (() => void) | null; onLoosen(): void }
+interface Props { results: ItemKey[]; names: string[]; sendBack?: string | null; addPerson?: string | null; onSwap?: (() => void) | null; onLoosen(): void }
 
 export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoosen }: Props) {
   const { t, lang } = usePrefs();
@@ -28,20 +29,27 @@ export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoo
 }
 
 function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
-  const { t, region } = usePrefs();
-  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `${formatRating(card.rating)}/10`].filter(Boolean).join("  ·  ");
+  const { t, region, lang } = usePrefs();
+  const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
+  const series = card.collection;
+  const first = series?.parts[0];
+  const meta = (series ? [seriesLabel(lang, series), rating] : [card.year, formatRuntime(card.runtime), rating]).filter(Boolean).join("  ·  ");
   return (
     <View style={[s.tape, s.row, { alignItems: "flex-start", padding: space[3], gap: space[3] }]}>
-      {card.poster ? <Image source={{ uri: card.poster }} style={{ width: 96, aspectRatio: 2 / 3 }} /> : <View style={{ width: 96, aspectRatio: 2 / 3, backgroundColor: colors.shelfHigh }} />}
+      <View style={{ width: 96 }}>
+        {card.poster ? <Image source={{ uri: card.poster }} style={{ width: 96, aspectRatio: 2 / 3 }} /> : <View style={{ width: 96, aspectRatio: 2 / 3, backgroundColor: colors.shelfHigh }} />}
+        {series && <SeriesSticker series={series} lang={lang} />}
+      </View>
       <View style={{ flex: 1, gap: space[2] }}>
         <Text style={[s.display, { fontSize: fontSize["2xl"], color: colors.label }]}>{rank}</Text>
         <Text style={[s.display, { fontSize: fontSize.xl }]}>{card.title}</Text>
         <Text style={s.label}>{meta}</Text>
+        {first && <Text style={s.body}>{t("series.startWith", { title: first.title, year: first.year ?? "" })}</Text>}
         {card.providers.length === 0 && <Text style={[s.body, s.dim]}>{t("results.notStreaming", { region })}</Text>}
         <View style={s.wrap}>
           {card.providers.map((p) => p.logo && <Image key={p.id} source={{ uri: p.logo }} accessibilityLabel={p.name} style={{ width: 28, height: 28 }} />)}
         </View>
-        <Btn tone="label" title={`${t("results.where")} →`} onPress={() => void Linking.openURL(`${API_URL}/title/${card.type}/${card.id}`)} />
+        <Btn tone="label" title={`${t("results.where")} →`} onPress={() => void Linking.openURL(`${API_URL}${itemHref(card.key)}`)} />
       </View>
     </View>
   );

@@ -152,15 +152,3 @@ export function toCollection(c: RawCollection): CollectionDetail {
   const parts = toSummaries(c.parts, "movie").sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999));
   return { id: c.id, name: c.name, overview: c.overview ?? "", poster: tmdbImage(c.poster_path, "w500"), backdrop: tmdbImage(c.backdrop_path, "w780"), parts };
 }
-
-/** For a match someone else reached first: build a card from the full detail. */
-export function detailToDeckCard(d: TitleDetail): DeckCard {
-  const unique = streamingOnly(d.providers);
-  return {
-    ...(d.collection ? { partOf: d.collection } : {}),
-    key: d.key, id: d.id, type: d.type, title: d.title, year: d.year, poster: d.poster, rating: d.rating, overview: d.overview,
-    genreIds: d.genreIds, runtime: d.runtime, genreNames: d.genres.slice(0, 2).map((g) => g.name),
-    providers: unique.slice(0, 4),
-    cast: d.cast.slice(0, 5).map((c) => c.name),
-  };
-}

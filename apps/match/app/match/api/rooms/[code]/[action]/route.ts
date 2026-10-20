@@ -1,4 +1,4 @@
-import { castVote, normalizeRoomCode, parseTitleKey, syncRoom, titleKey, type Vote } from "@wtw/core";
+import { castVote, itemKey, normalizeRoomCode, parseItemKey, syncRoom, type Vote } from "@wtw/core";
 import { deal } from "@/lib/deal";
 import { getRoomStore } from "@/lib/store";
 import { badRequest, body, liveOff, noStore, parseViewer, reply } from "@/lib/http";
@@ -21,8 +21,8 @@ export async function POST(req: Request, ctx: RouteContext<"/match/api/rooms/[co
     return Response.json({ ok: true }, { headers: noStore });
   }
   if (action !== "vote") return badRequest();
-  const parsed = typeof b?.key === "string" ? parseTitleKey(b.key) : null;
+  const parsed = typeof b?.key === "string" ? parseItemKey(b.key) : null;
   const vote = (b?.vote ?? null) as Vote | null;
   if (!parsed || !VOTES.includes(vote)) return badRequest();
-  return reply(await castVote(store, code, viewer, titleKey(parsed.type, parsed.id), vote, now, deal));
+  return reply(await castVote(store, code, viewer, itemKey(parsed.kind, parsed.id), vote, now, deal));
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { isSearchMode, loosenOptions, MIN_QUERY, parseSearch, providersInRegion, searchCollections, searchHref, t, TmdbError, MAX_SEARCH_PAGES } from "@wtw/core";
+import { isSearchMode, loosenOptions, MIN_QUERY, parseSearch, providersInRegion, searchHref, t, TmdbError, MAX_SEARCH_PAGES } from "@wtw/core";
 import { Notice, SearchBox } from "@wtw/ui";
 import { getPrefs, tmdb } from "@wtw/ui/server";
 import { ResultGrid } from "@/components/result-grid";
@@ -14,9 +14,8 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   const f = parseSearch({ get: (k) => { const v = sp[k]; return typeof v === "string" ? v : null; } });
   const { lang, region, tmdbLang, services } = await getPrefs();
   const searching = isSearchMode(f);
-  const [found, collections, providers] = await Promise.all([
+  const [found, providers] = await Promise.all([
     runSearch(f, region, tmdbLang, services).catch((e: unknown) => { if (e instanceof TmdbError && e.transient) return "busy" as const; throw e; }),
-    searching ? searchCollections(tmdb(), f.q, tmdbLang).catch(() => []) : [],
     providersInRegion(tmdb(), region, tmdbLang).then((ps) => ps.filter((p) => !/channel/i.test(p.name)).slice(0, 18)).catch(() => []),
   ]);
   const heading = searching ? t(lang, "search.results", { q: f.q }) : t(lang, "search.browse");
@@ -37,14 +36,6 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
               {found.items.length === 0 && <Empty f={f} lang={lang} />}
               {found.more && f.page < MAX_SEARCH_PAGES && found.items.length > 0 && (
                 <Link href={searchHref({ ...f, page: f.page + 1 })} scroll={false} className="btn btn-ghost mt-10" data-testid="load-more">{t(lang, "search.loadMore")}</Link>
-              )}
-              {collections.length > 0 && (
-                <section className="mt-12">
-                  <h2 className="label text-paper-dim">{t(lang, "search.collections")}</h2>
-                  <ul className="mt-3 flex flex-wrap gap-3">
-                    {collections.map((c) => <li key={c.id}><Link href={`/collection/${c.id}`} className="sticker rotate-[-1deg] hover:rotate-0">{c.name}</Link></li>)}
-                  </ul>
-                </section>
               )}
               {found.people.length > 0 && <People people={found.people} lang={lang} />}
             </>

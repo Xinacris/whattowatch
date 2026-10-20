@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { likesNeeded, listNames, normalizeRoomCode, ROUND_EXTRA, ROUND_FIRST, type RoomView, type TitleKey, type Vote } from "@wtw/core";
+import { likesNeeded, listNames, normalizeRoomCode, ROUND_EXTRA, ROUND_FIRST, type ItemKey, type RoomView, type Vote } from "@wtw/core";
 import { DeckView } from "@/components/deck-view";
 import { NameGate } from "@/components/name-gate";
 import { ResultsView } from "@/components/results-view";
@@ -40,7 +40,7 @@ export default function Room() {
   if (!viewer.name) return <View style={s.screen}><NameGate title={t("join.title", { code })} initial="" onDone={(name) => setViewer({ ...viewer, name })} /></View>;
   if (!view) return <View style={s.screen}><Text style={[s.label, { padding: space[6] }]}>{t("common.loading")}</Text></View>;
 
-  const send = (key: string, vote: Vote | null) => void api.vote(code, viewer, key as TitleKey, vote).then(apply, fail);
+  const send = (key: string, vote: Vote | null) => void api.vote(code, viewer, key as ItemKey, vote).then(apply, fail);
   const mine = view.deck.map((k) => votes[k]);
   const swiped = mine.filter(Boolean).length;
   const seen = mine.filter((v) => v === "seen").length;

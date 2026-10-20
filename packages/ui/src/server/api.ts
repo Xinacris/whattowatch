@@ -1,5 +1,6 @@
 import "server-only";
-import { buildDeckPage, collection, deckCard, parseTitleKey, filtersFromQuery, guessLang, guessRegion, person, providersInRegion, search, searchCollections, titleDetail, tmdbLanguage, TmdbError, trending, type Lang } from "@wtw/core";
+import { buildDeckPage, collection, collectionDeckCard, collectionSummaries, deckCard, parseItemKey, filtersFromQuery, guessLang, guessRegion, person, providersInRegion, search, searchCollections, titleDetail, tmdbLanguage, TmdbError, trending, type Lang } from "@wtw/core";
+import { metaLoader } from "./movie-meta";
 import { tmdb } from "./tmdb";
 
 const CACHE = "public, s-maxage=3600, stale-while-revalidate=86400";
@@ -18,6 +19,22 @@ function context(req: Request) {
 
 const positiveInt = (s: string | undefined) => (s && /^\d{1,9}$/.test(s) ? Number(s) : null);
 
+async function fixedCards(rawKeys: string, rawOnly: string, tl: string, region: string) {
+  const keys = rawKeys.split(".").map(parseItemKey).filter((k) => k !== null).slice(0, 60);
+  if (!keys.length) return null;
+  const only = rawOnly.split(".").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  const seriesIds = keys.flatMap((k) => (k.kind === "collection" ? [k.id] : []));
+  const [titles, series] = await Promise.all([
+    Promise.allSettled(keys.map((k) => (k.kind === "collection" ? Promise.reject(new Error("series")) : deckCard(tmdb(), k.kind, k.id, tl, region, only)))),
+    seriesIds.length ? collectionSummaries(tmdb(), seriesIds, tl, metaLoader(tl, region)) : new Map(),
+  ]);
+  return keys.flatMap((k, i) => {
+    if (k.kind === "collection") { const s = series.get(k.id); return s ? [collectionDeckCard(s, only)] : []; }
+    const r = titles[i];
+    return r?.status === "fulfilled" ? [r.value] : [];
+  });
+}
+
 type Route = (segments: string[], ctx: ReturnType<typeof context>) => Promise<unknown> | null;
 
 /** Thin, typed proxy over @wtw/core. Unknown paths 404; the TMDB credential never leaves the server. */
@@ -34,19 +51,14 @@ const routes: Record<string, Route> = {
   person: ([id], { tl }) => { const n = positiveInt(id); return n ? person(tmdb(), n, tl) : null; },
   collection: ([id], { tl }) => { const n = positiveInt(id); return n ? collection(tmdb(), n, tl) : null; },
   providers: (_s, { region, tl }) => providersInRegion(tmdb(), region, tl).then((providers) => ({ region, providers })),
-  /** Fixed decks: these keys, in this order, as swipe cards. Titles that fail to load are dropped. */
-  cards: (_s, { q, tl, region }) => {
-    const keys = (q.get("keys") ?? "").split(".").map(parseTitleKey).filter((k) => k !== null).slice(0, 60);
-    if (!keys.length) return null;
-    const only = (q.get("providers") ?? "").split(".").map(Number).filter((n) => Number.isInteger(n) && n > 0);
-    return Promise.allSettled(keys.map((k) => deckCard(tmdb(), k.type, k.id, tl, region, only)))
-      .then((rs) => rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : [])));
-  },
+  /** Fixed decks: these keys (titles or series), in this order, as swipe cards. Anything that fails to load is dropped. */
+  cards: (_s, { q, tl, region }) => fixedCards(q.get("keys") ?? "", q.get("providers") ?? "", tl, region),
   deck: (_s, { q, tl }) => {
     const seed = q.get("seed") ?? "";
     const page = positiveInt(q.get("page") ?? "0") ?? 0;
     if (!/^[a-z0-9]{1,24}$/.test(seed) || page > 50) return null;
-    return buildDeckPage(tmdb(), filtersFromQuery(q), seed, page, tl);
+    const f = filtersFromQuery(q);
+    return buildDeckPage(tmdb(), f, seed, page, tl, metaLoader(tl, f.region));
   },
 };
 

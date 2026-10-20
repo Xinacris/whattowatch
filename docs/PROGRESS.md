@@ -93,8 +93,8 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - [x] 1. Branch, brief, plan
 - [x] 2. Vercel ↔ GitHub, READY preview from a push
 - [x] 3. Core: item-key, collections grouping, codec v3 (tests)
-- [ ] 4. Cached movie-meta loader; search and deck use it
-- [ ] 5. Search, suggestions, collection page
+- [x] 4. Cached movie-meta loader; search and deck use it
+- [x] 5. Search, suggestions, collection page
 - [ ] 6. Deck (link, live, mobile) and results
 - [ ] 7. Copy diet, COPY.md, results kicker bug
 - [ ] 8. Verify, screenshots, merge, production READY
@@ -108,3 +108,7 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 3: series dedupe in the deck is by series id across pages (`appendPage`) and in rooms (`DeckBook.series`). Once Shrek is in the deck as the series card or as one lone part, no later Shrek card is dealt. Rooms stored before this have no `series` and simply can't dedupe their old cards.
 - Step 3: results lift a yes on a lone part to the series card when the deck has one (`matchesFromVoters(deck, voters, seriesOf)`). Only likes are lifted; "seen" Shrek 2 doesn't rule out the series.
 - Step 3: codec v3 = v2 with `id * 3 + kind` (movie/tv/collection). 30 items (6 of them series) + 3 voters = 231 characters. v1 and v2 tokens still decode (a v2 writer is kept in the tests).
+- Step 4: the meta loader is `createMetaLoader` in core (batching, 8 at a time, failures dropped) wrapped by `metaLoader(language, region)` in `@wtw/ui/server` (React `cache` per request). It reads the exact details URL deck cards use (`/movie/{id}?language&append_to_response=credits,watch/providers`), and `tmdb()` now revalidates `/movie|tv|collection/{id}` for 7 days, so search filters, grouping, deck cards and series all share one cached fetch per title. 429s are retried by the existing client backoff.
+- Step 5: search filtering moved after grouping (TMDB search results are no longer pre-filtered), so a series is judged by all its parts. Series named by the query come first (`withNamedSeries`), ordered by where their first film came up in the title search; "shrek 2" also looks up "shrek" (`seriesQuery`), so it leads with the Shrek series and the card says "Has Shrek 2". A named series swallows its lone parts.
+- Step 5: TMDB's TR names are its own ("Şrek Koleksiyonu", "Yüzüklerin Efendisi [Seri]"); we show them as given rather than rewrite them to "… Serisi".
+- Step 5: unreleased parts are excluded from counts and years: Shrek shows `4 FILMS · 2001–2010` (Shrek 5, 2027, left out).

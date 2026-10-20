@@ -1,5 +1,7 @@
 import { tmdbImage, yearOf } from "./format";
 import { collectionKey, type CollectionKey } from "./item-key";
+import type { Lang } from "./region";
+import { t } from "./strings";
 import type { TitleMeta } from "./movie-meta";
 import { titleKey, type DeckCard, type MediaType, type Provider, type TitleKey } from "./tmdb/models";
 import type { RawCollection } from "./tmdb/raw";
@@ -142,3 +144,38 @@ export function collectionDeckCard(s: CollectionSummary, only: readonly number[]
 
 /** The series a card belongs to, whether it is the series card or one lone part. */
 export const seriesOfCard = (c: Pick<DeckCard, "collection" | "partOf">): number | null => c.collection?.id ?? c.partOf?.id ?? null;
+
+/** Lone part -> its series key, from cards already loaded. For counting a yes on Shrek 2 as a yes on the Shrek series. */
+export function seriesLookup(cards: readonly Pick<DeckCard, "key" | "partOf">[]): (key: string) => CollectionKey | null {
+  const map = new Map(cards.flatMap((c) => (c.partOf ? [[c.key as string, collectionKey(c.partOf.id)] as const] : [])));
+  return (key) => map.get(key) ?? null;
+}
+
+/** `5 FILMS · 2001–2010`: what's in the box, on the tape label. */
+export function seriesLabel(lang: Lang, s: Pick<CollectionSummary, "partCount" | "yearFrom" | "yearTo">): string {
+  const years = s.yearFrom && s.yearTo && s.yearTo !== s.yearFrom ? `${s.yearFrom}–${s.yearTo}` : (s.yearFrom ?? "");
+  return [t(lang, "series.films", { n: s.partCount }), years].filter(Boolean).join(" · ");
+}
+
+/** "shrek 2", "rocky iv", "saw part 3" -> the series' own name, for looking the series up. */
+export const seriesQuery = (q: string) => q.replace(/\s+(part\s+)?(\d{1,2}|[ivx]{1,4})$/i, "").trim();
+
+/**
+ * Puts series that match the query by name at the top of a grouped list. A named series swallows
+ * its lone parts (one series, one card); named series whose films the title search found come
+ * first, by where their first film was.
+ */
+export function withNamedSeries<T extends { key: string }>(grouped: readonly ListItem<T>[], named: readonly CollectionSummary[], titles: readonly T[]): ListItem<T>[] {
+  const fresh = named.filter((s) => !grouped.some((g) => g.kind === "collection" && g.summary.id === s.id));
+  const freshIds = new Set(fresh.map((s) => s.id));
+  const lone = (id: number) => grouped.flatMap((g) => (g.kind === "title" && g.partOf?.id === id ? [g.item] : []));
+  const lists: ListItem<T>[] = [
+    ...fresh.map((summary) => ({ kind: "collection" as const, summary, hits: lone(summary.id) })),
+    ...grouped.filter((g) => !(g.kind === "title" && g.partOf && freshIds.has(g.partOf.id))),
+  ];
+  const namedIds = new Set(named.map((s) => s.id));
+  const isNamed = (g: ListItem<T>) => g.kind === "collection" && namedIds.has(g.summary.id);
+  const pos = new Map(titles.map((t, i) => [t.key, i]));
+  const firstHit = (g: ListItem<T>) => (g.kind === "collection" && g.hits.length ? Math.min(...g.hits.map((h) => pos.get(h.key) ?? Infinity)) : Infinity);
+  return [...lists.filter(isNamed).sort((a, b) => firstHit(a) - firstHit(b)), ...lists.filter((g) => !isNamed(g))];
+}

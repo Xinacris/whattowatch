@@ -10,7 +10,7 @@ export function useLinkDeck(payload: LinkPayload, role: "initiator" | "friend") 
   const { lang } = usePrefs();
   const votes = useDeck((s) => s.votes);
   useEffect(() => {
-    const opts: StartOptions = role === "initiator" ? {} : payload.version === 2 ? { keys: payload.deck } : { limit: v1DeckSize(payload) };
+    const opts: StartOptions = role === "initiator" ? {} : payload.version !== 1 ? { keys: payload.deck } : { limit: v1DeckSize(payload) };
     useDeck.getState().start(payload.filters, payload.seed, lang, loadProgress(payload.seed), opts);
   }, [payload, role, lang]);
   useEffect(() => { if (Object.keys(votes).length) saveProgress(payload.seed, votes); }, [votes, payload.seed]);

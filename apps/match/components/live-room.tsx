@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { listNames, ROUND_EXTRA, ROUND_FIRST, likesNeeded, type RoomView, type TitleKey, type Viewer, type Vote } from "@wtw/core";
+import { listNames, ROUND_EXTRA, ROUND_FIRST, likesNeeded, type ItemKey, type RoomView, type Viewer, type Vote } from "@wtw/core";
 import { Notice, useT, usePrefs } from "@wtw/ui";
 import { api } from "@/lib/api";
 import { useDeck } from "@/lib/deck-store";
@@ -44,7 +44,7 @@ export function LiveRoom({ code }: { code: string }) {
   }
   if (!view) return <p className="label mx-auto max-w-md animate-pulse px-4 py-24 text-paper-dim">{t("common.loading")}</p>;
 
-  const send = (key: string, vote: Vote | null) => api.vote(code, viewer, key as TitleKey, vote).then(apply, fail);
+  const send = (key: string, vote: Vote | null) => api.vote(code, viewer, key as ItemKey, vote).then(apply, fail);
   const resumed = first ? Object.keys(first.mine).length > 0 : false;
   const mine = view.deck.map((k) => votes[k]);
   const voted = mine.filter((v) => v === "like" || v === "nope").length;

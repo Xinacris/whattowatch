@@ -1,4 +1,5 @@
 import type { DeckPage } from "./deck";
+import type { ItemKey } from "./item-key";
 import { filtersToQuery, type RoomFilters } from "./filters";
 import type { Vote } from "./match";
 import type { Lang } from "./region";
@@ -37,14 +38,14 @@ export function createWtwApi(base: string, doFetch: typeof fetch = (...a) => fet
       const q = new URLSearchParams({ ...filtersToQuery(filters), seed, page: String(page), lang });
       return call<DeckPage>(`/match/api/tmdb/deck?${q.toString()}`);
     },
-    cards(keys: TitleKey[], filters: RoomFilters, lang: Lang) {
+    cards(keys: ItemKey[], filters: RoomFilters, lang: Lang) {
       const q = new URLSearchParams({ keys: keys.join("."), region: filters.region, lang });
       if (filters.providers.length) q.set("providers", filters.providers.join("."));
       return call<DeckCard[]>(`/match/api/tmdb/cards?${q.toString()}`);
     },
     createRoom: (viewer: Viewer, filters: RoomFilters) => post<RoomView>("/match/api/rooms", { viewer, filters }),
     sync: (code: string, viewer: Viewer) => post<RoomView>(`/match/api/rooms/${code}/sync`, { viewer }),
-    vote: (code: string, viewer: Viewer, key: TitleKey, vote: Vote | null) => post<RoomView>(`/match/api/rooms/${code}/vote`, { viewer, key, vote }),
+    vote: (code: string, viewer: Viewer, key: ItemKey, vote: Vote | null) => post<RoomView>(`/match/api/rooms/${code}/vote`, { viewer, key, vote }),
     leave: (code: string, viewer: Viewer) => post<{ ok: true }>(`/match/api/rooms/${code}/leave`, { viewer }),
   };
 }

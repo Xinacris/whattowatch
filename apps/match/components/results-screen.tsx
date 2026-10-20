@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { formatRating, formatRuntime, listNames, type DeckCard, type TitleKey } from "@wtw/core";
-import { Poster, useT, usePrefs } from "@wtw/ui";
+import { formatRating, formatRuntime, itemHref, listNames, type DeckCard, type ItemKey } from "@wtw/core";
+import { CollectionCard, Poster, seriesLabel, useT, usePrefs } from "@wtw/ui";
 import { useCards } from "@/lib/use-cards";
 import { shareUrl } from "@/lib/share";
 
 interface Props {
-  results: TitleKey[];
+  results: ItemKey[];
   names: string[];
   sendBack?: string | null; // results link
   addPerson?: string | null; // same deck for one more voter
@@ -41,14 +41,18 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
 function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
   const t = useT();
   const { lang, region } = usePrefs();
-  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `${formatRating(card.rating)}/10`, ...card.genreNames].filter(Boolean).join("  ·  ");
+  const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
+  const series = card.collection;
+  const first = series?.parts[0];
+  const meta = (series ? [seriesLabel(lang, series), rating] : [card.year, formatRuntime(card.runtime), rating, ...card.genreNames]).filter(Boolean).join("  ·  ");
   return (
     <li className="tape grid grid-cols-[96px_1fr] gap-4 p-3 sm:grid-cols-[160px_1fr] sm:gap-6 sm:p-4" style={{ transform: `rotate(${rank % 2 ? -0.4 : 0.4}deg)` }} data-testid="result">
-      <Poster src={card.poster} title={card.title} lang={lang} eager />
+      {series ? <CollectionCard summary={series} lang={lang} eager bare /> : <Poster src={card.poster} title={card.title} lang={lang} eager />}
       <div className="flex min-w-0 flex-col gap-3">
         <span className="display text-4xl text-label">{rank}</span>
         <p className="display text-3xl break-words sm:text-4xl">{card.title}</p>
         <p className="label text-paper-dim">{meta}</p>
+        {first && <p className="font-semibold" data-testid="start-with">{t("series.startWith", { title: first.title, year: first.year ?? "" })}</p>}
         <div className="flex flex-wrap gap-2">
           {card.providers.length === 0 && <p className="text-sm text-paper-dim">{t("results.notStreaming", { region })}</p>}
           {card.providers.map((p) => (
@@ -59,7 +63,7 @@ function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
             </span>
           ))}
         </div>
-        <a href={`/title/${card.type}/${card.id}`} className="btn btn-label mt-auto self-start">{t("results.where")} →</a>
+        <a href={itemHref(card.key)} className="btn btn-label mt-auto self-start">{t("results.where")} →</a>
       </div>
     </li>
   );

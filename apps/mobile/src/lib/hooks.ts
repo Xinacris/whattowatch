@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { ApiError, detailToDeckCard, POLL_MS, type DeckCard, type RoomError, type RoomView, type TitleKey, type Viewer } from "@wtw/core";
+import { ApiError, DEFAULT_FILTERS, POLL_MS, type DeckCard, type ItemKey, type RoomError, type RoomView, type Viewer } from "@wtw/core";
 import { api } from "./api";
 import { useDeck } from "./deck";
 import { usePrefs } from "./prefs";
@@ -38,17 +38,16 @@ export function useRoom(code: string, viewer: Viewer | null) {
   return { view, first, fatal, offline, apply, fail };
 }
 
-/** Cards for keys: from the loaded deck, else fetched from the API. */
-export function useCards(keys: readonly TitleKey[]): DeckCard[] {
-  const { cards } = useDeck();
+/** Cards for keys (titles or series): from the loaded deck, else fetched from the API in one go. */
+export function useCards(keys: readonly ItemKey[]): DeckCard[] {
+  const { cards, filters } = useDeck();
   const { lang, region } = usePrefs();
   const [fetched, setFetched] = useState<Record<string, DeckCard>>({});
-  const missing = keys.filter((k) => !cards.some((c) => c.key === k) && !fetched[k]).join(",");
+  const missing = keys.filter((k) => !cards.some((c) => c.key === k) && !fetched[k]).join(".");
   useEffect(() => {
     if (!missing) return;
-    for (const k of missing.split(",") as TitleKey[]) {
-      api.title(k, lang, region).then((d) => setFetched((f) => ({ ...f, [k]: detailToDeckCard(d) })), () => {});
-    }
-  }, [missing, lang, region]);
+    const f = { ...(filters ?? DEFAULT_FILTERS), region, providers: [] };
+    api.cards(missing.split(".") as ItemKey[], f, lang).then((got) => setFetched((prev) => ({ ...prev, ...Object.fromEntries(got.map((c) => [c.key, c])) })), () => {});
+  }, [missing, lang, region, filters]);
   return keys.map((k) => cards.find((c) => c.key === k) ?? fetched[k]).filter((c): c is DeckCard => Boolean(c));
 }

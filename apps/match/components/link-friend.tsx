@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { linkDeck, makeSeed, matchesFromVoters, nextLink, picksOf, swapLink, voterLabels, type LinkPayload } from "@wtw/core";
+import { linkDeck, makeSeed, matchesFromVoters, nextLink, picksOf, seriesLookup, swapLink, voterLabels, type DeckCard, type LinkPayload } from "@wtw/core";
 import { useDeck, remaining } from "@/lib/deck-store";
 import { markVoted } from "@/lib/link-progress";
 import { linkUrl } from "@/lib/share";
@@ -28,10 +28,12 @@ export function LinkFriend({ payload, name, intro }: { payload: LinkPayload; nam
   const deck = linkDeck(payload, state.cards.map((c) => c.key));
   const voters = [...payload.voters, picksOf(name, deck, state.votes)];
   const addPerson = linkUrl(nextLink(payload, deck, voters, false));
-  return <FriendResults payload={payload} deck={deck} voters={voters} addPerson={addPerson} />;
+  return <FriendResults payload={payload} deck={deck} voters={voters} addPerson={addPerson} cards={state.cards} />;
 }
 
-function FriendResults({ payload, deck, voters, addPerson }: { payload: LinkPayload; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string }) {
+interface ResultsProps { payload: LinkPayload; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string; cards: DeckCard[] }
+
+function FriendResults({ payload, deck, voters, addPerson, cards }: ResultsProps) {
   // Remember we're done: reload lands back on these results, not on the deck.
   useEffect(() => {
     markVoted(payload.seed);
@@ -39,7 +41,7 @@ function FriendResults({ payload, deck, voters, addPerson }: { payload: LinkPayl
   }, [payload.seed, addPerson]);
   return (
     <ResultsScreen
-      results={matchesFromVoters(deck, voters)}
+      results={matchesFromVoters(deck, voters, seriesLookup(cards))}
       names={voterLabels(voters.map((v) => v.name))}
       sendBack={linkUrl(nextLink(payload, deck, voters, true))}
       addPerson={addPerson}

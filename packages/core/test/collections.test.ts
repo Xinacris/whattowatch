@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendPage, collectionDeckCard, groupIntoCollections, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
+  appendPage, collectionDeckCard, groupIntoCollections, seriesQuery, withNamedSeries, itemHref, itemKey, mapLimit, matchesFromVoters, parseItemKey, settleGroups, toCollectionSummary,
   type CollectionSummary, type DeckCard, type ItemKey, type MediaType, type RawCollection, type SeriesRef, type TitleMeta,
 } from "../src";
 
@@ -149,5 +149,21 @@ describe("mapLimit", () => {
     });
     expect(peak).toBe(3);
     expect(out.map((r) => (r.status === "fulfilled" ? r.value : "x"))).toEqual([2, 4, 6, "x", 10, 12, 14, 16, 18, 20]);
+  });
+});
+
+describe("search: series named by the query", () => {
+  it.each([["shrek 2", "shrek"], ["Rocky IV", "Rocky"], ["saw part 3", "saw"], ["yüzüklerin efendisi", "yüzüklerin efendisi"], ["2012", "2012"], ["ocean's 11", "ocean's"]])("%s -> %s", (q, out) => {
+    expect(seriesQuery(q)).toBe(out);
+  });
+  const titles = [t("tv", 84773), t("movie", 121), t("movie", 122), t("movie", 1361), t("movie", 5)];
+  const grouped = settleGroups(groupIntoCollections(titles, (id) => (id === 121 || id === 122 ? { id: 119, name: "LOTR" } : id === 1361 ? { id: 141290, name: "Animated" } : null)), (id) => (id === 119 ? summary(119, 3) : summary(id, 2)));
+  it("named series lead, ordered by where their first film came up; lone parts are swallowed", () => {
+    const out = withNamedSeries(grouped, [summary(141290, 2), summary(119, 3), summary(777, 2)], titles);
+    expect(out.map((g) => (g.kind === "collection" ? g.summary.key : g.item.key))).toEqual(["c:119", "c:141290", "c:777", "t84773", "m5"]);
+    expect(out[1]?.kind === "collection" && out[1].hits.map((h) => h.id)).toEqual([1361]);
+  });
+  it("nothing named: the list is unchanged", () => {
+    expect(withNamedSeries(grouped, [], titles)).toEqual(grouped);
   });
 });

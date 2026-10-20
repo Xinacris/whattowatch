@@ -1,10 +1,16 @@
 "use client";
 import { useId, useState, type KeyboardEvent } from "react";
-import { t, type Suggestion } from "@wtw/core";
+import { t, type Lang, type Suggestion } from "@wtw/core";
 import { usePrefs } from "./prefs-client";
 import { useSuggestions } from "./use-suggestions";
 
-const hrefOf = (s: Suggestion) => (s.kind === "person" ? `/person/${s.id}` : `/title/${s.type}/${s.id}`);
+const hrefOf = (s: Suggestion) => (s.kind === "person" ? `/person/${s.id}` : s.kind === "collection" ? `/collection/${s.id}` : `/title/${s.type}/${s.id}`);
+
+function detailOf(lang: Lang, s: Suggestion): string {
+  if (s.kind === "person") return t(lang, "suggest.person");
+  if (s.kind === "collection") return t(lang, "series.films", { n: s.count ?? 0 });
+  return [s.year, t(lang, s.type === "movie" ? "common.movie" : "common.tv")].filter(Boolean).join(" · ");
+}
 
 /**
  * Search with instant suggestions, as an ARIA combobox. Plain GET form underneath, so Enter
@@ -65,7 +71,7 @@ export function SearchBox({ size = "header", initial = "", autoFocus = false }: 
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{s.label}</span>
                 <span className={`label block text-[11px] ${i === active ? "" : "text-paper-dim"}`}>
-                  {s.kind === "person" ? t(lang, "suggest.person") : [s.year, t(lang, s.type === "movie" ? "common.movie" : "common.tv")].filter(Boolean).join(" · ")}
+                  {detailOf(lang, s)}
                 </span>
               </span>
             </a>

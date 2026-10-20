@@ -44,7 +44,7 @@ export function Initiator({ payload, name }: { payload: LinkPayload; name: strin
 export function Friend({ payload, name }: { payload: LinkPayload; name: string }) {
   const { lang } = usePrefs();
   useEffect(() => {
-    deck.start(payload.filters, payload.seed, lang, {}, payload.version === 2 ? { keys: payload.deck } : { limit: v1DeckSize(payload) });
+    deck.start(payload.filters, payload.seed, lang, {}, payload.version !== 1 ? { keys: payload.deck } : { limit: v1DeckSize(payload) });
   }, [payload, lang]);
   const state = useDeck();
   const left = remaining(state).length;

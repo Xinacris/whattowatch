@@ -1,8 +1,9 @@
 import { Image, ScrollView, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
-import { formatRating, formatRuntime, type DeckCard } from "@wtw/core";
+import { formatRating, formatRuntime, seriesLabel, type DeckCard } from "@wtw/core";
 import { usePrefs } from "@/lib/prefs";
 import { colors, font, fontSize, s } from "@/lib/theme";
+import { SeriesBack, SeriesSticker } from "./series-face";
 
 function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: SharedValue<number>; y: SharedValue<number>; side: "like" | "nope" | "seen" }) {
   const style = useAnimatedStyle(() => {
@@ -18,14 +19,16 @@ function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: Shar
 }
 
 export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boolean; x: SharedValue<number>; y: SharedValue<number> }) {
-  const { t } = usePrefs();
-  const meta = [card.year, formatRuntime(card.runtime), formatRating(card.rating) && `${formatRating(card.rating)}/10`].filter(Boolean).join("  ·  ");
+  const { t, lang } = usePrefs();
+  const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
+  const series = card.collection;
+  const meta = (series ? [seriesLabel(lang, series), rating] : [card.year, formatRuntime(card.runtime), rating]).filter(Boolean).join("  ·  ");
   return (
     <View style={{ flex: 1, borderWidth: 2, borderColor: colors.paper, backgroundColor: colors.shelfRaised, overflow: "hidden" }}>
       <Stamp text={t("deck.like")} tone={colors.label} x={x} y={y} side="like" />
       <Stamp text={t("deck.nope")} tone={colors.nope} x={x} y={y} side="nope" />
       <Stamp text={t("deck.seen")} tone={colors.paper} x={x} y={y} side="seen" />
-      {flipped ? (
+      {flipped && series ? <SeriesBack series={series} /> : flipped ? (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
           <Text style={s.label}>{meta}</Text>
           <Text style={[s.display, { fontSize: fontSize["2xl"] }]}>{card.title}</Text>
@@ -33,7 +36,10 @@ export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boo
           {card.cast.length > 0 && <Text style={[s.body, s.dim]}>{t("deck.starring")}: {card.cast.join(", ")}</Text>}
         </ScrollView>
       ) : card.poster ? (
-        <Image source={{ uri: card.poster }} style={{ flex: 1 }} resizeMode="cover" accessibilityLabel={card.title} />
+        <View style={{ flex: 1 }}>
+          <Image source={{ uri: card.poster }} style={{ flex: 1 }} resizeMode="cover" accessibilityLabel={card.title} />
+          {series && <SeriesSticker series={series} lang={lang} />}
+        </View>
       ) : (
         <View style={{ flex: 1, justifyContent: "space-between", padding: 16, backgroundColor: colors.shelfHigh }}>
           <Text style={s.label}>{t("common.noPoster")}</Text>
@@ -46,7 +52,7 @@ export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boo
           <View style={s.row}>{card.providers.slice(0, 3).map((p) => p.logo && <Image key={p.id} source={{ uri: p.logo }} style={{ width: 26, height: 26 }} accessibilityLabel={p.name} />)}</View>
         </View>
         <Text style={s.label}>{[meta, ...card.genreNames].filter(Boolean).join("  ·  ")}</Text>
-        <Text style={[s.label, { color: colors.seen, fontSize: 10 }]}>{flipped ? t("deck.flipBack") : t("deck.flip")}</Text>
+        <Text style={[s.label, { color: colors.seen, fontSize: 10 }]}>{flipped ? t(series ? "series.flipBack" : "deck.flipBack") : t(series ? "series.flip" : "deck.flip")}</Text>
       </View>
     </View>
   );

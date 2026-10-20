@@ -1,5 +1,6 @@
 import { GENRES, genreIdsFor } from "./genres";
-import type { MediaType, TitleSummary } from "./tmdb/models";
+import type { CollectionPart } from "./collections";
+import type { MediaType, Provider, TitleSummary } from "./tmdb/models";
 
 // /search state lives in the URL. Parse anything, serialize only what differs from the defaults.
 
@@ -150,6 +151,27 @@ export function summaryPasses(s: TitleSummary, f: SearchFilters): boolean {
   if (f.turkish && s.language !== "tr") return false;
   if (f.genres.length && !genreIdsFor(f.genres, s.type).some((id) => s.genreIds.includes(id))) return false;
   return true;
+}
+
+/** Which services "only on my services" means: the picked ids, or for "any" the saved ones (any service when none are saved). */
+export function servicesWanted(f: SearchFilters, saved: readonly number[]): number[] | "any" | null {
+  if (Array.isArray(f.services)) return f.services;
+  if (f.services === "any") return saved.length ? [...saved] : "any";
+  return null;
+}
+
+/** The filters that need a title's details: runtime and services. */
+export function metaPasses(m: { runtime: number | null; providers: readonly Provider[] }, f: Pick<SearchFilters, "runtimeMax">, wanted: number[] | "any" | null): boolean {
+  if (f.runtimeMax && (!m.runtime || m.runtime > f.runtimeMax)) return false;
+  if (wanted === "any") return m.providers.length > 0;
+  if (wanted) return m.providers.some((p) => wanted.includes(p.id));
+  return true;
+}
+
+/** One part of a series against every filter. A series is in when at least one part is. */
+export function partPasses(p: CollectionPart, f: SearchFilters, wanted: number[] | "any" | null): boolean {
+  const asSummary = { key: p.key, id: p.id, type: "movie" as const, title: p.title, year: p.year, poster: p.poster, rating: p.rating, overview: "", genreIds: p.genreIds, ...(p.language ? { language: p.language } : {}) };
+  return summaryPasses(asSummary, f) && metaPasses(p, f, wanted);
 }
 
 /** Interleaves movie and TV pages and drops repeats. */

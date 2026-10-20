@@ -1,5 +1,5 @@
 import { cleanQuery, guessLang, MIN_QUERY, suggest, tmdbLanguage, type Lang } from "@wtw/core";
-import { tmdb } from "@wtw/ui/server";
+import { metaLoader, tmdb } from "@wtw/ui/server";
 
 const CACHE = "public, s-maxage=86400, stale-while-revalidate=604800";
 
@@ -10,7 +10,8 @@ export async function GET(req: Request) {
   if (q.length < MIN_QUERY) return Response.json({ items: [] }, { headers: { "cache-control": CACHE } });
   const lang: Lang = url.searchParams.get("lang") === "tr" ? "tr" : url.searchParams.get("lang") === "en" ? "en" : guessLang(req.headers.get("accept-language"));
   try {
-    const items = await suggest(tmdb(), q, tmdbLanguage(lang, "US"));
+    const language = tmdbLanguage(lang, "US");
+    const items = await suggest(tmdb(), q, language, metaLoader(language, "US"));
     return Response.json({ items }, { headers: { "cache-control": CACHE } });
   } catch (err) {
     console.error("suggest", err instanceof Error ? err.message : err);
