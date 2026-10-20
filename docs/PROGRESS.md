@@ -97,7 +97,7 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - [x] 5. Search, suggestions, collection page
 - [x] 6. Deck (link, live, mobile) and results
 - [x] 7. Copy diet, COPY.md, results kicker bug
-- [ ] 8. Verify, screenshots, merge, production READY
+- [x] 8. Verify, screenshots, merge, production READY
 
 ## Decisions
 - Step 2: both projects connected with `vercel git connect` (production branch `main`). Settings set through `vercel api PATCH /v9/projects`: root `apps/web` / `apps/match`, framework nextjs, install `pnpm install`, build `pnpm turbo run build --filter=<project>`, files outside the root included, ignored build step `npx turbo-ignore`. `ENABLE_EXPERIMENTAL_COREPACK=1` added for preview too (it was production-only), so preview builds use pnpm 12.
@@ -117,3 +117,4 @@ Plan: Git connection first so every push gets a real Vercel build; then core (it
 - Step 6: the search grid card shows only the film count on the poster sticker; the full `N FILMS · years · rating` sits under the name, because a full label on a 150px poster truncated. The "Has Shrek 2" note only shows when the query names that part and not the series (`namesPart`).
 - Step 8 (e2e): new `e2e/series.spec.ts` (g)–(k). (i) swipes 30 cards of the fantasy deck (seed "abc", which holds the Harry Potter and Super Mario series on page 0) and checks each series appears once and none of its parts ever do. `e2e/screens.spec.ts` takes the docs screenshots when `SCREENS=1`.
 - Step 8: `pnpm turbo run lint typecheck test build` exit 0 (22/22), core 135 tests. Playwright locally 15/15 (screens spec skipped). Git preview `whattowatch-4t6zpuujs-…` (8496b99) READY; `/`, `/search?q=shrek`, `/match/new` 200 via `vercel curl`, and the preview's shrek search has exactly one `data-collection="2150"`.
+- Step 8: `main` fast-forwarded to `9758f49` and pushed. Git-triggered production deploys `whattowatch-5m98vk0oq-…` and `whattowatch-match-qana17iy7-…` READY from `main`. Production `/`, `/search?q=shrek`, `/match/new`, `/api/health`, `/match/api/status` all 200 (`live:true, store:redis`). Full Playwright suite against production (with `E2E_LIVE=1`): 15/15.
