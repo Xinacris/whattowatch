@@ -57,17 +57,16 @@ export default async function Landing() {
       </section>
       {items.length > 0 && (
         <section aria-label={t(lang, "landing.shelf")} className="mx-auto max-w-6xl">
-          <h2 className="label px-4 text-paper-dim sm:px-6">{t(lang, "landing.shelf")}</h2>
-          <Shelf items={items} lang={lang} />
+          <Shelf items={items} lang={lang} pick ariaLabel={t(lang, "landing.shelf")} heading={<h2 className="label text-paper-dim">{t(lang, "landing.shelf")}</h2>} />
         </section>
       )}
       {rows.map((row, i) => (rowLists[i]?.length ?? 0) > 0 && (
         <section key={row.title} aria-label={row.title} className="mx-auto mt-10 max-w-6xl">
-          <div className="flex items-baseline justify-between gap-4 px-4 sm:px-6">
-            <h2 className="display text-3xl">{row.title}</h2>
-            <Link href={searchHref(row.filters)} className="label shrink-0 text-label hover:underline">{t(lang, "browse.all")} →</Link>
-          </div>
-          <Shelf items={rowLists[i] ?? []} lang={lang} pick={-1} />
+          <Shelf
+            items={rowLists[i] ?? []} lang={lang} ariaLabel={row.title}
+            heading={<h2 className="display text-3xl">{row.title}</h2>}
+            end={<Link href={searchHref(row.filters)} className="label shrink-0 text-label hover:underline">{t(lang, "browse.all")} →</Link>}
+          />
         </section>
       ))}
     </>

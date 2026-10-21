@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatRating, formatRuntime, REGIONS, t, titleDetail, type MediaType } from "@wtw/core";
-import { Poster, ProviderList, TapeMeta } from "@wtw/ui";
+import { Poster, ProviderList, ShelfScroller, TapeMeta } from "@wtw/ui";
 import { getPrefs, tmdb } from "@wtw/ui/server";
 import { isId, orNotFound } from "@/lib/load";
 
@@ -61,8 +61,7 @@ export default async function TitlePage(props: Props) {
       </div>
       {title.cast.length > 0 && (
         <section className="mt-14">
-          <h2 className="label text-paper-dim">{t(lang, "title.cast")}</h2>
-          <ul className="mt-4 flex gap-4 overflow-x-auto pb-3">
+          <ShelfScroller label={<h2 className="label text-paper-dim">{t(lang, "title.cast")}</h2>} ariaLabel={t(lang, "title.cast")} listClassName="pt-4 pb-3">
             {title.cast.map((c) => (
               <li key={c.id} className="w-28 shrink-0">
                 <Link href={`/person/${c.id}`} className="group block">
@@ -73,7 +72,7 @@ export default async function TitlePage(props: Props) {
                 </Link>
               </li>
             ))}
-          </ul>
+          </ShelfScroller>
         </section>
       )}
     </article>

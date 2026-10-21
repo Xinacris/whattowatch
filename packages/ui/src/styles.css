@@ -53,3 +53,13 @@ body::before {
   .chip[aria-pressed="true"], .chip:has(input:checked) { border-color: var(--wtw-label); background: var(--wtw-label); color: var(--wtw-labelInk); }
   .chip:has(input:focus-visible) { outline: 2px solid var(--wtw-paper); outline-offset: 2px; }
 }
+
+/* Shelf rows (ShelfScroller): no native scrollbar, every item a snap point, an opacity fade on the side with more. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.snap-items > * { scroll-snap-align: start; }
+.fade-right { mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
+.fade-left { mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent); }
+.fade-both { mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+.shelf-nav { display: none; }
+@media (hover: hover) and (pointer: fine) { .shelf-nav { display: flex; } }
