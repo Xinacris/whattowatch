@@ -57,3 +57,18 @@ for (const lang of ["en", "tr"] as const) {
     await row.screenshot({ path: `${OUT}/v25-browse-heading-375-${lang}.png` });
   });
 }
+
+// v2.5: the "Where it's on" box, Cyberpunk: Edgerunners in TR.
+for (const width of [375, 1280]) {
+  test(`where it's on at ${width} (tr)`, async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "tr-TR", viewport: { width, height: width < 500 ? 812 : 900 } });
+    await ctx.addCookies([{ name: "wtw_lang", value: "tr", url: BASE }, { name: "wtw_region", value: "TR", url: BASE }]);
+    const p = await ctx.newPage();
+    await p.goto("/title/tv/105248");
+    const box = p.locator("section.tape").filter({ has: p.getByRole("heading", { name: "Nerede var" }) });
+    await expect(box.getByTestId("justwatch-link")).toBeVisible();
+    await box.scrollIntoViewIfNeeded();
+    await p.waitForTimeout(500);
+    await box.screenshot({ path: `${OUT}/v25-where-${width}-tr.png` });
+  });
+}
