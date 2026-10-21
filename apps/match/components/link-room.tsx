@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { linkStage, listNames, matchesFromVoters, voterLabels, type LinkPayload } from "@wtw/core";
+import { linkStage, listNames, voterLabels, type LinkPayload } from "@wtw/core";
 import { Notice, useT, usePrefs } from "@wtw/ui";
 import { votedHere } from "@/lib/link-progress";
+import { useLinkResults } from "@/lib/use-link-results";
 import { getViewer, setViewerName } from "@/lib/viewer";
 import { LinkFriend, swapTo } from "./link-friend";
 import { LinkInitiator } from "./link-initiator";
@@ -32,8 +33,13 @@ export function LinkRoom({ payload }: { payload: LinkPayload }) {
     case "waiting":
       return <ShareScreen title={t("waiting.title")} line={t("waiting.body")} url={window.location.href} />;
     case "results":
-      return <ResultsScreen results={matchesFromVoters(payload.deck, payload.voters)} names={names} addPerson={payload.finished ? null : window.location.href} onSwap={swapTo(payload)} />;
+      return <LinkResults payload={payload} names={names} />;
     case "solo":
       return <Notice title={t("results.solo")} action={<Link href="/match/new" className="btn btn-label">{t("landing.start")} →</Link>} />;
   }
+}
+
+function LinkResults({ payload, names }: { payload: LinkPayload; names: string[] }) {
+  const results = useLinkResults(payload.deck, payload.voters);
+  return <ResultsScreen results={results} names={names} addPerson={payload.finished ? null : window.location.href} onSwap={swapTo(payload)} />;
 }

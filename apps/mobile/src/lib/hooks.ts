@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { ApiError, DEFAULT_FILTERS, POLL_MS, type DeckCard, type ItemKey, type RoomError, type RoomView, type Viewer } from "@wtw/core";
+import { ApiError, DEFAULT_FILTERS, matchesFromVoters, POLL_MS, seriesLookup, seriesParts, type DeckCard, type ItemKey, type RoomError, type RoomView, type Viewer, type VoterPicks } from "@wtw/core";
 import { api } from "./api";
 import { useDeck } from "./deck";
 import { usePrefs } from "./prefs";
@@ -50,4 +50,10 @@ export function useCards(keys: readonly ItemKey[]): DeckCard[] {
     api.cards(missing.split(".") as ItemKey[], f, lang).then((got) => setFetched((prev) => ({ ...prev, ...Object.fromEntries(got.map((c) => [c.key, c])) })), () => {});
   }, [missing, lang, region, filters]);
   return keys.map((k) => cards.find((c) => c.key === k) ?? fetched[k]).filter((c): c is DeckCard => Boolean(c));
+}
+
+/** A link's results, with yeses and seen-its on a lone film counted for its series. Same core rule as the web. */
+export function useLinkResults(deck: readonly ItemKey[], voters: readonly VoterPicks[]): ItemKey[] {
+  const parts = useCards(seriesParts(deck));
+  return matchesFromVoters(deck, voters, seriesLookup(parts));
 }

@@ -122,6 +122,7 @@ export function toView(room: Room, viewerId: string, now: number): RoomView {
     deck: room.book.deck,
     waitingOn: members.filter((m) => round.pending.includes(m.id)).map((m) => m.name),
     done: round.done,
+    // No seriesOf: a room deck never holds a film next to its own series card (fillBook skips both ways).
     results: round.done ? matchesFromVoters(room.book.deck, picks) : null,
     expiresAt: room.createdAt + ROOM_TTL_MS,
   };

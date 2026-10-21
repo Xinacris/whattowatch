@@ -1,4 +1,5 @@
 import { expect, test, type Browser } from "@playwright/test";
+import { encodeLink, sanitizeFilters, type ItemKey } from "../packages/core/src";
 import { api, finalSwipe, person, sitDown, swipe, topCard } from "./helpers";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3024";
@@ -64,6 +65,18 @@ test("(j) a v2 link from before series still opens to its results", async ({ bro
   await expect(results).toHaveCount(2);
   await expect(results.nth(0)).toContainText("Forrest Gump");
   await expect(results.nth(1)).toContainText("Shawshank");
+});
+
+test("(n) #5: a seen-it on Shrek 2 takes the Shrek series out of an old link's results", async ({ browser }) => {
+  // An old fixed deck holding the series card and one of its films: Shrek series (c:2150), Shrek 2 (m809), The Matrix (m603).
+  const deck: ItemKey[] = ["c:2150", "m809", "m603"];
+  const voters = [{ name: "Ayşe", likes: ["c:2150", "m603"] as ItemKey[], seen: [] }, { name: "Burak", likes: ["c:2150", "m603"] as ItemKey[], seen: ["m809"] as ItemKey[] }];
+  const p = await person(browser);
+  await p.goto(`/match/link?d=${encodeLink({ filters: sanitizeFilters({}), seed: "seen5", deck, voters, finished: true })}`);
+  await expect(p.getByRole("heading", { name: "You both said yes to these." })).toBeVisible();
+  const results = p.getByTestId("result");
+  await expect(results).toHaveCount(1);
+  await expect(results.first()).toContainText("The Matrix");
 });
 
 test("(k) zero-match results never say \"your turn\", in EN or TR", async ({ browser }) => {

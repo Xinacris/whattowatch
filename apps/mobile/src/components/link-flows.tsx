@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { router } from "expo-router";
-import { freshLink, linkDeck, makeSeed, matchesFromVoters, nextLink, picksOf, remaining, roundState, swapLink, v1DeckSize, voterLabels, votedKeys, type LinkPayload } from "@wtw/core";
+import { freshLink, linkDeck, makeSeed, nextLink, picksOf, remaining, roundState, swapLink, v1DeckSize, voterLabels, votedKeys, type LinkPayload } from "@wtw/core";
 import { deck, useDeck } from "@/lib/deck";
 import { API_URL } from "@/lib/env";
+import { useLinkResults } from "@/lib/hooks";
 import { markVoted } from "@/lib/link-store";
 import { usePrefs } from "@/lib/prefs";
 import { Btn, Notice } from "./ui";
@@ -56,8 +57,13 @@ export function Friend({ payload, name }: { payload: LinkPayload; name: string }
   }
   const keys = linkDeck(payload, state.cards.map((c) => c.key));
   const voters = [...payload.voters, picksOf(name, keys, state.votes)];
+  return <FriendResults payload={payload} keys={keys} voters={voters} />;
+}
+
+function FriendResults({ payload, keys, voters }: { payload: LinkPayload; keys: LinkPayload["deck"]; voters: LinkPayload["voters"] }) {
+  const results = useLinkResults(keys, voters);
   return (
-    <ResultsView results={matchesFromVoters(keys, voters)} names={voterLabels(voters.map((v) => v.name))} onLoosen={loosen} onSwap={swap(payload)}
+    <ResultsView results={results} names={voterLabels(voters.map((v) => v.name))} onLoosen={loosen} onSwap={swap(payload)}
       sendBack={url(nextLink(payload, keys, voters, true))} addPerson={url(nextLink(payload, keys, voters, false))} />
   );
 }

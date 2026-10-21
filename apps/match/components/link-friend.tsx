@@ -1,10 +1,11 @@
 "use client";
 import { useEffect } from "react";
-import { linkDeck, makeSeed, matchesFromVoters, nextLink, picksOf, seriesLookup, swapLink, voterLabels, type DeckCard, type LinkPayload } from "@wtw/core";
+import { linkDeck, makeSeed, nextLink, picksOf, swapLink, voterLabels, type LinkPayload } from "@wtw/core";
 import { useDeck, remaining } from "@/lib/deck-store";
 import { markVoted } from "@/lib/link-progress";
 import { linkUrl } from "@/lib/share";
 import { useLinkDeck } from "@/lib/use-link-deck";
+import { useLinkResults } from "@/lib/use-link-results";
 import { Deck } from "./deck";
 import { ResultsScreen } from "./results-screen";
 import { RoundCounter } from "./round-counter";
@@ -28,12 +29,13 @@ export function LinkFriend({ payload, name, intro }: { payload: LinkPayload; nam
   const deck = linkDeck(payload, state.cards.map((c) => c.key));
   const voters = [...payload.voters, picksOf(name, deck, state.votes)];
   const addPerson = linkUrl(nextLink(payload, deck, voters, false));
-  return <FriendResults payload={payload} deck={deck} voters={voters} addPerson={addPerson} cards={state.cards} />;
+  return <FriendResults payload={payload} deck={deck} voters={voters} addPerson={addPerson} />;
 }
 
-interface ResultsProps { payload: LinkPayload; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string; cards: DeckCard[] }
+interface ResultsProps { payload: LinkPayload; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string }
 
-function FriendResults({ payload, deck, voters, addPerson, cards }: ResultsProps) {
+function FriendResults({ payload, deck, voters, addPerson }: ResultsProps) {
+  const results = useLinkResults(deck, voters);
   // Remember we're done: reload lands back on these results, not on the deck.
   useEffect(() => {
     markVoted(payload.seed);
@@ -41,7 +43,7 @@ function FriendResults({ payload, deck, voters, addPerson, cards }: ResultsProps
   }, [payload.seed, addPerson]);
   return (
     <ResultsScreen
-      results={matchesFromVoters(deck, voters, seriesLookup(cards))}
+      results={results}
       names={voterLabels(voters.map((v) => v.name))}
       sendBack={linkUrl(nextLink(payload, deck, voters, true))}
       addPerson={addPerson}
