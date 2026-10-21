@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatRating, formatRuntime, itemHref, listNames, type DeckCard, type ItemKey } from "@wtw/core";
-import { CollectionCard, Poster, seriesLabel, useT, usePrefs } from "@wtw/ui";
+import { CollectionCard, Poster, ProviderList, seriesLabel, useT, usePrefs } from "@wtw/ui";
 import { useCards } from "@/lib/use-cards";
 import { shareUrl } from "@/lib/share";
 
@@ -57,16 +57,7 @@ function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
         <p className="display text-3xl break-words sm:text-4xl">{card.title}</p>
         <p className="label text-paper-dim">{meta}</p>
         {first && <p className="font-semibold" data-testid="start-with">{t("series.startWith", { title: first.title, year: first.year ?? "" })}</p>}
-        <div className="flex flex-wrap gap-2">
-          {card.providers.length === 0 && <p className="text-sm text-paper-dim">{t("results.notStreaming", { region })}</p>}
-          {card.providers.map((p) => (
-            <span key={p.id} className="flex items-center gap-2 border-2 border-rule py-1 pr-3 pl-1">
-              {/* eslint-disable-next-line @next/next/no-img-element -- TMDB provider logo */}
-              {p.logo && <img src={p.logo} alt="" className="size-7" />}
-              <span className="label normal-case tracking-normal">{p.name}</span>
-            </span>
-          ))}
-        </div>
+        <ProviderList providers={card.providers} link={card.providersLink ?? null} region={region} lang={lang} empty={t("results.notStreaming", { region })} />
         <a href={itemHref(card.key)} className="btn btn-label mt-auto self-start">{t("results.where")} →</a>
       </div>
     </li>

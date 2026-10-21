@@ -5,6 +5,7 @@ import { API_URL } from "@/lib/env";
 import { useCards } from "@/lib/hooks";
 import { usePrefs } from "@/lib/prefs";
 import { colors, fontSize, s, space } from "@/lib/theme";
+import { ProviderBox } from "./provider-box";
 import { SeriesSticker } from "./series-face";
 import { Btn } from "./ui";
 
@@ -32,7 +33,7 @@ export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoo
 }
 
 function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
-  const { t, region, lang } = usePrefs();
+  const { t, lang } = usePrefs();
   const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
   const series = card.collection;
   const first = series?.parts[0];
@@ -48,10 +49,7 @@ function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
         <Text style={[s.display, { fontSize: fontSize.xl }]}>{card.title}</Text>
         <Text style={s.label}>{meta}</Text>
         {first && <Text style={s.body}>{t("series.startWith", { title: first.title, year: first.year ?? "" })}</Text>}
-        {card.providers.length === 0 && <Text style={[s.body, s.dim]}>{t("results.notStreaming", { region })}</Text>}
-        <View style={s.wrap}>
-          {card.providers.map((p) => p.logo && <Image key={p.id} source={{ uri: p.logo }} accessibilityLabel={p.name} style={{ width: 28, height: 28 }} />)}
-        </View>
+        <ProviderBox card={card} />
         <Btn tone="label" title={`${t("results.where")} →`} onPress={() => void Linking.openURL(`${API_URL}${itemHref(card.key)}`)} />
       </View>
     </View>

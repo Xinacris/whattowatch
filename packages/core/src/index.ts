@@ -22,6 +22,7 @@ export * from "./rounds";
 export * from "./results";
 export * from "./search";
 export * from "./staff-pick";
+export * from "./providers";
 export * from "./item-key";
 export * from "./collections";
 export * from "./movie-meta";

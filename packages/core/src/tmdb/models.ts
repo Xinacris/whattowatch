@@ -72,6 +72,8 @@ export interface DeckCard extends Omit<TitleSummary, "key"> {
   genreNames: string[];
   providers: Provider[];
   cast: string[];
+  /** TMDB's JustWatch page for the region. Series cards have none (each part has its own). */
+  providersLink?: string | null;
   /** The film's series, from its details. A title card only carries it when the series didn't load (or in an old link's fixed deck). */
   partOf?: SeriesRef;
   /** The whole series as one card; `title`, `year` and `poster` then describe the series. */

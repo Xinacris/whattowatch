@@ -112,7 +112,8 @@ export function toDetail(d: RawDetail, type: MediaType, region: string): TitleDe
 /** Card for the deck. `only` limits provider logos to the room's services, if any were picked. */
 export function toDeckCard(d: RawDetail, type: MediaType, region: string, only: number[] = []): DeckCard {
   const summary = toSummary(d, type) as TitleSummary;
-  const unique = streamingOnly(toProviders(regionProviders(d, region)));
+  const rp = regionProviders(d, region);
+  const unique = streamingOnly(toProviders(rp));
   const series = type === "movie" ? d.belongs_to_collection : null;
   return {
     ...(series ? { partOf: { id: series.id, name: seriesName(series.name) } } : {}),
@@ -122,6 +123,7 @@ export function toDeckCard(d: RawDetail, type: MediaType, region: string, only: 
     genreNames: (d.genres ?? []).slice(0, 2).map((g) => g.name),
     providers: only.length ? unique.filter((p) => only.includes(p.id)) : unique.slice(0, 4),
     cast: castOf(d, 5).map((c) => c.name),
+    providersLink: rp?.link ?? null,
   };
 }
 

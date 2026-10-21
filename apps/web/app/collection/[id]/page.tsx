@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { collectionSummaries, formatRating, formatRuntime, t, type CollectionPart, type Lang } from "@wtw/core";
-import { Poster, seriesLabel } from "@wtw/ui";
+import { JustWatchCredit, Poster, seriesLabel } from "@wtw/ui";
 import { getPrefs, metaLoader, tmdb } from "@wtw/ui/server";
 import { isId, orNotFound } from "@/lib/load";
 
@@ -45,6 +45,7 @@ export default async function CollectionPage(props: Props) {
       <ol className="mt-12 flex flex-col gap-3" data-testid="collection-parts">
         {c.parts.map((p, i) => <PartRow key={p.id} part={p} n={i + 1} lang={lang} on={p.id === highlight} />)}
       </ol>
+      {c.parts.some((p) => p.providers.length > 0) && <JustWatchCredit link={null} lang={lang} className="mt-4 block" />}
     </article>
   );
 }
