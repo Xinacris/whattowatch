@@ -1,5 +1,5 @@
 import "server-only";
-import type { RoomResult, Viewer } from "@wtw/core";
+import type { RoomResult, RoomStore, Viewer } from "@wtw/core";
 
 export const noStore = { "cache-control": "no-store" };
 
@@ -26,4 +26,10 @@ export async function body(req: Request): Promise<Record<string, unknown> | null
   } catch {
     return null;
   }
+}
+
+/** The server's clock. e2e only: the memory store honours `x-wtw-skew` (ms) so a test can step past PRESENCE_MS without sleeping. */
+export function roomNow(req: Request, store: RoomStore): number {
+  const skew = store.kind === "memory" ? Number(req.headers.get("x-wtw-skew")) || 0 : 0;
+  return Date.now() + skew;
 }

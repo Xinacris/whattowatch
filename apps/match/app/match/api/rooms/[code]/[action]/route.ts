@@ -1,7 +1,7 @@
 import { castVote, itemKey, normalizeRoomCode, parseItemKey, syncRoom, type Vote } from "@wtw/core";
 import { deal } from "@/lib/deal";
 import { getRoomStore } from "@/lib/store";
-import { badRequest, body, liveOff, noStore, parseViewer, reply } from "@/lib/http";
+import { badRequest, body, liveOff, roomNow, noStore, parseViewer, reply } from "@/lib/http";
 
 const VOTES: (Vote | null)[] = ["like", "nope", "seen", null];
 
@@ -14,7 +14,7 @@ export async function POST(req: Request, ctx: RouteContext<"/match/api/rooms/[co
   const b = await body(req);
   const viewer = parseViewer(b?.viewer);
   if (!viewer) return badRequest();
-  const now = Date.now();
+  const now = roomNow(req, store);
   if (action === "sync") return reply(await syncRoom(store, code, viewer, now, deal));
   if (action === "leave") {
     await store.removeMember(code, viewer.id);

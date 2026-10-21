@@ -155,6 +155,82 @@ describe("people who leave after finishing (#7)", () => {
   });
 });
 
+describe("a finished room keeps its results (v2.6)", () => {
+  const FIVE = ["m1", "m2", "m3", "m4", "m5"];
+  const LATER = PRESENCE_MS + 1_000;
+  /** A and B both finish at t=2 with five shared yeses; the room is done. */
+  async function finished(deal = dealer()) {
+    const s = await room(deal);
+    for (const v of [A, B]) await syncRoom(s, "ABC234", v, 1, deal);
+    await swipeAll(s, A, 6, 2, deal);
+    const done = await swipeAll(s, B, 5, 2, deal);
+    expect(done.ok && done.value).toMatchObject({ done: true, results: FIVE });
+    return { s, deal };
+  }
+  it.each([
+    ["B goes quiet for longer than PRESENCE_MS: A still sees them", [[A, 2 + LATER]]],
+    ["A goes quiet, B comes back alone", [[B, 2 + LATER]]],
+    ["B quiet, then A quiet, B back alone", [[A, 2 + LATER], [B, 2 + 2 * LATER]]],
+    ["both quiet, A comes back after 5 minutes", [[A, 2 + 5 * 60_000]]],
+    ["C opens the code after the night is over", [[C, 2 + LATER]]],
+  ] as const)("%s", async (_name, polls) => {
+    const { s, deal } = await finished();
+    for (const [who, at] of polls) {
+      const r = await syncRoom(s, "ABC234", who, at, deal);
+      expect(r.ok && r.value).toMatchObject({ done: true, results: FIVE, voters: ["Ayşe", "Burak"], waitingOn: [] });
+    }
+    expect((await s.get("ABC234"))?.final).toMatchObject({ results: FIVE, voters: [{ id: "a" }, { id: "b" }], deckLength: 15 });
+  });
+  it("someone new gets the results, read-only: no deck, no seat, their votes go nowhere", async () => {
+    const { s, deal } = await finished();
+    const c = await syncRoom(s, "ABC234", C, 3, deal);
+    expect(c.ok && c.value).toMatchObject({ done: true, results: FIVE, deck: [], mine: {} });
+    await castVote(s, "ABC234", C, "m1", "like", 4, deal);
+    const room = await s.get("ABC234");
+    expect(room?.ballots.c).toBeUndefined();
+    expect(room?.members.map((m) => m.id)).not.toContain("c");
+    expect(room?.book.deck).toHaveLength(15); // a done room never deals more
+  });
+  it("two members polling at the same moment store it once, and both see the same list", async () => {
+    const deal = dealer();
+    const base = await room(deal);
+    let wins = 0;
+    const s: RoomStore = { ...base, finish: async (...args) => { const won = await base.finish(...args); if (won) wins++; return won; } };
+    for (const v of [A, B]) await syncRoom(s, "ABC234", v, 1, deal);
+    const deck = (await s.get("ABC234"))?.book.deck ?? [];
+    for (const [i, k] of deck.entries()) { await s.setVote("ABC234", "a", k, i < 6 ? "like" : "nope"); await s.setVote("ABC234", "b", k, i < 5 ? "like" : "nope"); }
+    const [x, y] = await Promise.all([syncRoom(s, "ABC234", A, 2, deal), syncRoom(s, "ABC234", B, 2, deal)]);
+    expect(wins).toBe(1);
+    expect(x.ok && x.value.results).toEqual(FIVE);
+    expect(y.ok && y.value.results).toEqual(FIVE);
+  });
+  it("zero shared titles is stored too: later polls keep the zero-overlap screen", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    for (const v of [A, B]) await syncRoom(s, "ABC234", v, 1, deal);
+    const deck = (await s.get("ABC234"))?.book.deck ?? [];
+    // Five yeses each, none in common, at a short shelf so nobody's under the target forever.
+    for (const [i, k] of deck.entries()) { await s.setVote("ABC234", "a", k, i < 5 ? "like" : "nope"); await s.setVote("ABC234", "b", k, i >= 5 && i < 10 ? "like" : "nope"); }
+    const done = await syncRoom(s, "ABC234", A, 2, deal);
+    expect(done.ok && done.value).toMatchObject({ done: true, results: [] });
+    const later = await syncRoom(s, "ABC234", B, 2 + LATER, deal);
+    expect(later.ok && later.value).toMatchObject({ done: true, results: [] });
+    expect((await s.get("ABC234"))?.final?.results).toEqual([]);
+  });
+  it("a room stored before results were kept: the next poll of a done room stores them", async () => {
+    const { s, deal } = await finished();
+    const { final: _dropped, ...legacy } = (await s.get("ABC234"))!;
+    const old = createMemoryStore();
+    await old.create(legacy, legacy.book);
+    for (const m of legacy.members) await old.upsertMember("ABC234", m);
+    for (const [id, b] of Object.entries(legacy.ballots)) for (const [k, v] of Object.entries(b)) await old.setVote("ABC234", id, k as TitleKey, v);
+    expect((await old.get("ABC234"))?.final).toBeUndefined();
+    const r = await syncRoom(old, "ABC234", A, 3, deal);
+    expect(r.ok && r.value.results).toEqual(FIVE);
+    expect((await old.get("ABC234"))?.final?.results).toEqual(FIVE);
+  });
+});
+
 describe("dealing film series", () => {
   it("never deals a second card from a series already in the room deck", async () => {
     const deal = seriesDealer();

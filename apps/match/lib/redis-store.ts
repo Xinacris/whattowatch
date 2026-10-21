@@ -1,6 +1,6 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
-import { ROOM_TTL_MS, type Ballot, type DeckBook, type Member, type Room, type RoomMeta, type RoomStore, type Vote } from "@wtw/core";
+import { ROOM_TTL_MS, type Ballot, type DeckBook, type FinalResults, type Member, type Room, type RoomMeta, type RoomStore, type Vote } from "@wtw/core";
 
 const k = (code: string, part: string) => `wtw:room:${code}:${part}`;
 const HASHES = ["members", "votes"] as const;
@@ -8,7 +8,8 @@ const HASHES = ["members", "votes"] as const;
 /**
  * Rooms in Upstash. Members and votes are separate hashes so concurrent writes never clobber
  * each other. The deck lives in `book`; extending it is gated by SET NX on the old length,
- * so two members finishing together deal five more cards once.
+ * so two members finishing together deal five more cards once. `final` (the stored results) is
+ * SET NX too: the first member to see the room done writes it, everyone after reads it.
  */
 export function createRedisStore(redis: Redis): RoomStore {
   async function touch(code: string) {
@@ -30,15 +31,17 @@ export function createRedisStore(redis: Redis): RoomStore {
       const p = redis.pipeline();
       p.get<RoomMeta>(k(code, "meta"));
       p.get<DeckBook>(k(code, "book"));
+      p.get<FinalResults>(k(code, "final"));
       for (const part of HASHES) p.hgetall(k(code, part));
-      const [meta, book, members, votes] = (await p.exec()) as [RoomMeta | null, DeckBook | null, Record<string, Member> | null, Record<string, Vote> | null];
+      const [meta, book, final, members, votes] = (await p.exec()) as [RoomMeta | null, DeckBook | null, FinalResults | null, Record<string, Member> | null, Record<string, Vote> | null];
       if (!meta) return null;
       const ballots: Record<string, Ballot> = {};
       for (const [field, vote] of Object.entries(votes ?? {})) {
         const [memberId, key] = field.split("|");
         if (memberId && key) (ballots[memberId] ??= {})[key] = vote;
       }
-      return { ...meta, members: Object.values(members ?? {}), ballots, book: book ?? { deck: [], pool: [], page: 0, exhausted: true } } satisfies Room;
+      const room: Room = { ...meta, members: Object.values(members ?? {}), ballots, book: book ?? { deck: [], pool: [], page: 0, exhausted: true } };
+      return final ? { ...room, final } : room;
     },
     async upsertMember(code, member) {
       await redis.hset(k(code, "members"), { [member.id]: member });
@@ -56,6 +59,11 @@ export function createRedisStore(redis: Redis): RoomStore {
       if (won !== "OK") return false;
       await redis.set(k(code, "book"), book, { px: ROOM_TTL_MS });
       return true;
+    },
+    async finish(code, fromLength, final) {
+      const book = await redis.get<DeckBook>(k(code, "book"));
+      if (book && book.deck.length !== fromLength) return false;
+      return (await redis.set(k(code, "final"), final, { nx: true, px: ROOM_TTL_MS })) === "OK";
     },
   };
 }

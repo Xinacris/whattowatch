@@ -109,3 +109,36 @@ test("a chewed-up link says so and offers a new night", async ({ page }) => {
   await expect(page.getByText("This tape is chewed up.")).toBeVisible();
   await expect(page.getByRole("link", { name: /Start movie night/ })).toBeVisible();
 });
+
+test("(e) v2.6: link results survive opening a title and coming back, and reopening the page", async ({ browser }) => {
+  const a = await person(browser);
+  await setUpNight(a, "Ayşe", "Pass a link");
+  const deck = [...(await swipeRun(a, "LLLL")), await finalSwipe(a, "ArrowRight")];
+  const link = await a.getByTestId("share-url").inputValue();
+  const b = await person(browser);
+  await b.goto(link);
+  await sitDown(b, "Burak");
+  await swipeRun(b, "LLLN");
+  await finalSwipe(b, "ArrowLeft");
+  const names = b.getByTestId("result").locator("p.display");
+  await expect(names).toHaveCount(3);
+  const shared = await names.allTextContents();
+  expect(shared).toEqual(deck.slice(0, 3));
+
+  const where = b.getByTestId("result").last().getByRole("link", { name: /Where to watch/ });
+  await where.scrollIntoViewIfNeeded();
+  const scrolled = await b.evaluate(() => window.scrollY);
+  await where.click();
+  await expect(b).toHaveURL(/\/(title|collection)\//);
+  await b.goBack();
+  await expect(names).toHaveCount(3);
+  expect(await names.allTextContents()).toEqual(shared);
+  await expect.poll(() => b.evaluate(() => window.scrollY)).toBeGreaterThan(scrolled - 40);
+
+  const again = await b.context().newPage();
+  const url = b.url();
+  await b.close();
+  await again.goto(url);
+  await expect(again.getByTestId("result").locator("p.display")).toHaveCount(3);
+  expect(await again.getByTestId("result").locator("p.display").allTextContents()).toEqual(shared);
+});

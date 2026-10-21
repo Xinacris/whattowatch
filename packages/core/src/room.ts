@@ -26,7 +26,11 @@ export interface RoomMeta { code: string; filters: RoomFilters; seed: string; cr
  */
 export interface DeckBook { deck: ItemKey[]; pool: ItemKey[]; page: number; exhausted: boolean; series?: number[] }
 
-export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; book: DeckBook }
+/** Results, computed once when the round is done and never again: presence can't change a finished night. */
+export interface FinalResults { results: ItemKey[]; voters: Viewer[]; deckLength: number; at: number }
+
+/** `final` is missing until the room is done (and on rooms stored before v2.6). */
+export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; book: DeckBook; final?: FinalResults }
 
 /** What a client sees on each poll. Ballots stay server-side; you only get your own. */
 export interface RoomView extends RoomMeta {
@@ -38,6 +42,8 @@ export interface RoomView extends RoomMeta {
   done: boolean;
   /** Only once the room is done: nobody sees a result before everyone finishes. */
   results: ItemKey[] | null;
+  /** Names of who the results were computed from, once done. */
+  voters: string[] | null;
   expiresAt: number;
 }
 
@@ -55,6 +61,8 @@ export interface RoomStore {
   setVote(code: string, memberId: string, key: ItemKey, vote: Vote | null): Promise<void>;
   /** Replaces the book only if the deck is still `fromLength` long. Two members finishing together extend once. */
   extendDeck(code: string, fromLength: number, book: DeckBook): Promise<boolean>;
+  /** Stores the results once, if none are stored yet and the deck is still `fromLength` long. Two members finishing together write once. */
+  finish(code: string, fromLength: number, final: FinalResults): Promise<boolean>;
 }
 
 export function presentMembers(members: readonly Member[], now: number): Member[] {
@@ -119,25 +127,41 @@ export function departedFinished(room: Pick<Room, "members" | "ballots" | "book"
     .sort((a, b) => a.joinedAt - b.joinedAt);
 }
 
-export function toView(room: Room, viewerId: string, now: number): RoomView {
-  const members = presentMembers(room.members, now);
-  const ids = members.map((m) => m.id);
-  const round = roomRound(room.book, room.ballots, ids);
-  const voters = [...ids, ...departedFinished(room, now).map((m) => m.id)];
-  const picks = voters.map((id) => {
-    const b = room.ballots[id] ?? {};
+/** Present members plus those who left after finishing (#7): everyone the results are made from. */
+function votersOf(room: Room, now: number): Member[] {
+  return [...presentMembers(room.members, now), ...departedFinished(room, now)];
+}
+
+function finalOf(room: Room, now: number): FinalResults {
+  const voters = votersOf(room, now);
+  const picks = voters.map((m) => {
+    const b = room.ballots[m.id] ?? {};
     return { likes: room.book.deck.filter((k) => b[k] === "like"), seen: room.book.deck.filter((k) => b[k] === "seen") };
   });
+  // No seriesOf: a room deck never holds a film next to its own series card (fillBook skips both ways).
+  return { results: matchesFromVoters(room.book.deck, picks), voters: voters.map(({ id, name }) => ({ id, name })), deckLength: room.book.deck.length, at: now };
+}
+
+export function toView(room: Room, viewerId: string, now: number): RoomView {
+  const members = presentMembers(room.members, now);
+  const meta = { code: room.code, filters: room.filters, seed: room.seed, createdAt: room.createdAt, hostId: room.hostId, expiresAt: room.createdAt + ROOM_TTL_MS };
+  const { final } = room;
+  if (final) {
+    // Done for good. Only the people who voted keep their deck; anyone else just sees the results.
+    const voted = final.voters.some((v) => v.id === viewerId);
+    return { ...meta, members, mine: voted ? (room.ballots[viewerId] ?? {}) : {}, deck: voted ? room.book.deck : [], waitingOn: [], done: true, results: final.results, voters: final.voters.map((v) => v.name) };
+  }
+  const round = roomRound(room.book, room.ballots, members.map((m) => m.id));
+  const computed = round.done ? finalOf(room, now) : null;
   return {
-    code: room.code, filters: room.filters, seed: room.seed, createdAt: room.createdAt, hostId: room.hostId,
+    ...meta,
     members,
     mine: room.ballots[viewerId] ?? {},
     deck: room.book.deck,
     waitingOn: members.filter((m) => round.pending.includes(m.id)).map((m) => m.name),
     done: round.done,
-    // No seriesOf: a room deck never holds a film next to its own series card (fillBook skips both ways).
-    results: round.done ? matchesFromVoters(room.book.deck, picks) : null,
-    expiresAt: room.createdAt + ROOM_TTL_MS,
+    results: computed?.results ?? null,
+    voters: computed?.voters.map((v) => v.name) ?? null,
   };
 }
 
@@ -155,6 +179,10 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
   if (!loaded.ok) return loaded;
   const room = loaded.value;
   const existing = room.members.find((m) => m.id === viewer.id);
+  if (room.final) { // a finished night: heartbeat for those who were there, nobody new takes a seat, nothing is dealt
+    if (existing) await store.upsertMember(code, { ...existing, name: viewer.name, lastSeen: now });
+    return { ok: true, value: toView(room, viewer.id, now) };
+  }
   if (!existing && presentMembers(room.members, now).length >= MAX_MEMBERS) return { ok: false, reason: "full" };
   const member: Member = { id: viewer.id, name: viewer.name, joinedAt: existing?.joinedAt ?? now, lastSeen: now };
   const members = [...room.members.filter((m) => m.id !== viewer.id), member];
@@ -171,13 +199,18 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
   }
   member.dealt = book.deck.length;
   await store.upsertMember(code, member);
-  return { ok: true, value: toView({ ...room, members, book }, viewer.id, now) };
+  const settled: Room = { ...room, members, book };
+  if (!roomRound(book, room.ballots, present).done) return { ok: true, value: toView(settled, viewer.id, now) };
+  // Done: store the results once. Whoever loses the race reads the winner's.
+  const final = finalOf(settled, now);
+  const stored = (await store.finish(code, book.deck.length, final)) ? final : ((await store.get(code))?.final ?? final);
+  return { ok: true, value: toView({ ...settled, final: stored }, viewer.id, now) };
 }
 
 export async function castVote(store: RoomStore, code: string, viewer: Viewer, key: ItemKey, vote: Vote | null, now: number, deal?: DealPage): Promise<RoomResult<RoomView>> {
   const loaded = await load(store, code, now);
   if (!loaded.ok) return loaded;
-  if (!loaded.value.book.deck.includes(key)) return syncRoom(store, code, viewer, now, deal);
+  if (loaded.value.final || !loaded.value.book.deck.includes(key)) return syncRoom(store, code, viewer, now, deal);
   await store.setVote(code, viewer.id, key, vote);
   return syncRoom(store, code, viewer, now, deal);
 }
@@ -206,6 +239,12 @@ export function createMemoryStore(): RoomStore {
       const r = must(code);
       if (r.book.deck.length !== fromLength) return false;
       r.book = book;
+      return true;
+    },
+    async finish(code, fromLength, final) {
+      const r = must(code);
+      if (r.final || r.book.deck.length !== fromLength) return false;
+      r.final = final;
       return true;
     },
   };

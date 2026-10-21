@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatRating, formatRuntime, itemHref, listNames, type DeckCard, type ItemKey } from "@wtw/core";
 import { CollectionCard, Poster, ProviderList, seriesLabel, useT, usePrefs } from "@wtw/ui";
 import { useCards } from "@/lib/use-cards";
+import { rememberScroll, useScrollReturn } from "@/lib/scroll-return";
 import { shareUrl } from "@/lib/share";
 
 interface Props {
@@ -20,6 +21,7 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
   const cards = useCards(results);
   const zero = results.length === 0;
   const [more, setMore] = useState(false); // zero overlap: two buttons up front, the rest behind "More"
+  useScrollReturn(cards.length === results.length);
   return (
     <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6" data-testid="results">
       <h1 className="display text-5xl text-label sm:text-7xl">{zero ? t("results.zero") : t(names.length > 2 ? "results.titleMany" : "results.title")}</h1>
@@ -58,7 +60,8 @@ function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
         <p className="label text-paper-dim">{meta}</p>
         {first && <p className="font-semibold" data-testid="start-with">{t("series.startWith", { title: first.title, year: first.year ?? "" })}</p>}
         <ProviderList providers={card.providers} link={card.providersLink ?? null} region={region} lang={lang} empty={t("results.notStreaming", { region })} />
-        <a href={itemHref(card.key)} className="btn btn-label mt-auto self-start">{t("results.where")} →</a>
+        {/* Same tab, so the phone's back button returns here; the results are stored, so they're still here. */}
+        <a href={itemHref(card.key)} onClick={rememberScroll} className="btn btn-label mt-auto self-start">{t("results.where")} →</a>
       </div>
     </li>
   );
