@@ -1,4 +1,5 @@
 import { isCollectionKey, type CollectionKey, type ItemKey } from "./item-key";
+import { voterKey } from "./link-voter";
 
 export interface VoterPicks { likes: readonly ItemKey[]; seen: readonly ItemKey[] }
 
@@ -27,7 +28,7 @@ export function voterLabels(names: readonly string[]): string[] {
   const count = new Map<string, number>();
   return names.map((raw) => {
     const name = raw.trim() || "?";
-    const k = name.toLocaleLowerCase();
+    const k = voterKey(name);
     const n = (count.get(k) ?? 0) + 1;
     count.set(k, n);
     return n === 1 ? name : `${name} (${n})`;

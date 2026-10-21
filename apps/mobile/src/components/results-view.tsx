@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Image, Linking, ScrollView, Share, Text, View } from "react-native";
 import { formatRating, formatRuntime, itemHref, listNames, seriesLabel, type DeckCard, type ItemKey } from "@wtw/core";
 import { API_URL } from "@/lib/env";
@@ -9,9 +9,9 @@ import { ProviderBox } from "./provider-box";
 import { SeriesSticker } from "./series-face";
 import { Btn } from "./ui";
 
-interface Props { results: ItemKey[]; names: string[]; sendBack?: string | null; addPerson?: string | null; onSwap?: (() => void) | null; onLoosen(): void }
+interface Props { results: ItemKey[]; names: string[]; sendBack?: string | null; addPerson?: string | null; onSwap?: (() => void) | null; onLoosen(): void; footer?: ReactNode }
 
-export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoosen }: Props) {
+export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoosen, footer }: Props) {
   const { t, lang } = usePrefs();
   const cards = useCards(results);
   const zero = results.length === 0;
@@ -28,6 +28,7 @@ export function ResultsView({ results, names, sendBack, addPerson, onSwap, onLoo
       {(!zero || more) && sendBack && <Btn tone={zero ? "ghost" : "label"} title={t("results.sendBack")} onPress={() => void Share.share({ message: sendBack })} />}
       {(!zero || more) && addPerson && <Btn title={t("results.addPerson")} onPress={() => void Share.share({ message: addPerson })} />}
       {zero && !more && (sendBack || addPerson) && <Btn title={t("results.more")} onPress={() => setMore(true)} style={{ borderWidth: 0, alignSelf: "flex-start", paddingHorizontal: 0 }} />}
+      {footer}
     </ScrollView>
   );
 }

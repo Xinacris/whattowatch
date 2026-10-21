@@ -5,6 +5,7 @@ export * from "./filters";
 export * from "./format";
 export * from "./genres";
 export * from "./link";
+export * from "./link-voter";
 export * from "./match";
 export * from "./random";
 export * from "./region";

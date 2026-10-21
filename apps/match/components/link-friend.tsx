@@ -1,18 +1,19 @@
 "use client";
 import { useEffect } from "react";
-import { linkDeck, makeSeed, nextLink, picksOf, swapLink, voterLabels, type LinkPayload } from "@wtw/core";
+import { linkDeck, makeSeed, nextLink, picksOf, swapLink, voterLabels, withVoter, type LinkPayload } from "@wtw/core";
 import { useDeck, remaining } from "@/lib/deck-store";
 import { markVoted } from "@/lib/link-progress";
 import { linkUrl } from "@/lib/share";
 import { useLinkDeck } from "@/lib/use-link-deck";
 import { useLinkResults } from "@/lib/use-link-results";
 import { Deck } from "./deck";
+import { PassPhone } from "./pass-phone";
 import { ResultsScreen } from "./results-screen";
 import { RoundCounter } from "./round-counter";
 
 /** Everyone after the initiator: a fixed deck, no peeking, results when the last card goes. */
 export function LinkFriend({ payload, name, intro }: { payload: LinkPayload; name: string; intro: string }) {
-  useLinkDeck(payload, "friend");
+  useLinkDeck(payload, "friend", name);
   const state = useDeck();
   const left = remaining(state).length;
   const finished = state.done && !state.loading && left === 0;
@@ -27,28 +28,31 @@ export function LinkFriend({ payload, name, intro }: { payload: LinkPayload; nam
     );
   }
   const deck = linkDeck(payload, state.cards.map((c) => c.key));
-  const voters = [...payload.voters, picksOf(name, deck, state.votes)];
+  const voters = withVoter(payload.voters, picksOf(name, deck, state.votes)); // swiping again replaces your earlier picks
   const addPerson = linkUrl(nextLink(payload, deck, voters, false));
-  return <FriendResults payload={payload} deck={deck} voters={voters} addPerson={addPerson} />;
+  return <FriendResults payload={payload} name={name} deck={deck} voters={voters} addPerson={addPerson} />;
 }
 
-interface ResultsProps { payload: LinkPayload; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string }
+interface ResultsProps { payload: LinkPayload; name: string; deck: LinkPayload["deck"]; voters: LinkPayload["voters"]; addPerson: string }
 
-function FriendResults({ payload, deck, voters, addPerson }: ResultsProps) {
+function FriendResults({ payload, name, deck, voters, addPerson }: ResultsProps) {
   const results = useLinkResults(deck, voters);
   // Remember we're done: reload lands back on these results, not on the deck.
   useEffect(() => {
-    markVoted(payload.seed);
+    markVoted(payload.seed, name);
     window.history.replaceState(null, "", addPerson);
-  }, [payload.seed, addPerson]);
+  }, [payload.seed, name, addPerson]);
   return (
-    <ResultsScreen
-      results={results}
-      names={voterLabels(voters.map((v) => v.name))}
-      sendBack={linkUrl(nextLink(payload, deck, voters, true))}
-      addPerson={addPerson}
-      onSwap={swapTo(payload)}
-    />
+    <>
+      <ResultsScreen
+        results={results}
+        names={voterLabels(voters.map((v) => v.name))}
+        sendBack={linkUrl(nextLink(payload, deck, voters, true))}
+        addPerson={addPerson}
+        onSwap={swapTo(payload)}
+      />
+      <div className="mx-auto flex max-w-4xl px-4 pb-12 sm:px-6"><PassPhone href={addPerson} /></div>
+    </>
   );
 }
 

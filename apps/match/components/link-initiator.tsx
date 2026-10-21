@@ -7,13 +7,14 @@ import { markVoted } from "@/lib/link-progress";
 import { linkUrl } from "@/lib/share";
 import { useLinkDeck } from "@/lib/use-link-deck";
 import { Deck } from "./deck";
+import { PassPhone } from "./pass-phone";
 import { RoundCounter } from "./round-counter";
 import { ShareScreen } from "./share-screen";
 
 /** The person starting the night: 15 cards, then 5 more at a time, until five yeses or 30 cards. */
 export function LinkInitiator({ payload, name }: { payload: LinkPayload; name: string }) {
   const t = useT();
-  useLinkDeck(payload, "initiator");
+  useLinkDeck(payload, "initiator", name);
   const { cards, votes, done } = useDeck();
   const order = cards.map((c) => c.key);
   const round = roundState(votes, order, done);
@@ -34,10 +35,14 @@ export function LinkInitiator({ payload, name }: { payload: LinkPayload; name: s
       const url = linkUrl(nextLink(payload, deck, [picksOf(name, deck, votes)], false));
       const note = round.reason === "cap" ? t("share.picky") : round.reason === "end" ? t("share.shelfEnd") : null;
       const sent = () => {
-        markVoted(payload.seed);
+        markVoted(payload.seed, name);
         window.history.replaceState(null, "", url); // reload now opens "waiting for your friend"
       };
-      return <ShareScreen title={t("share.title", { n: round.liked })} line={note ?? t("share.line")} url={url} onShared={sent} onUndo={() => useDeck.getState().undo()} />;
+      return (
+        <ShareScreen title={t("share.title", { n: round.liked })} line={note ?? t("share.line")} url={url} onShared={sent} onUndo={() => useDeck.getState().undo()}>
+          <PassPhone href={url} onClick={() => markVoted(payload.seed, name)} />
+        </ShareScreen>
+      );
     }
     case "capped-empty":
       return (

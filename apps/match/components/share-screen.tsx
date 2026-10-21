@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useT } from "@wtw/ui";
 import { shareUrl } from "@/lib/share";
 
-interface Props { title: string; line: string; url: string; onShared?(): void; onUndo?: (() => void) | null }
+interface Props { title: string; line: string; url: string; onShared?(): void; onUndo?: (() => void) | null; children?: ReactNode }
 
 /** Blind on purpose: how many, never which. A headline, one line, the button, the link. */
-export function ShareScreen({ title, line, url, onShared, onUndo }: Props) {
+export function ShareScreen({ title, line, url, onShared, onUndo, children }: Props) {
   const t = useT();
   const [copied, setCopied] = useState(false);
   async function share() {
@@ -22,6 +22,7 @@ export function ShareScreen({ title, line, url, onShared, onUndo }: Props) {
       </button>
       <input readOnly aria-label={t("share.button")} className="field text-sm" value={url} onFocus={(e) => e.currentTarget.select()} data-testid="share-url" />
       {onUndo && <button type="button" className="label self-start text-paper-dim hover:text-label hover:underline" onClick={onUndo}>↶ {t("deck.undo")}</button>}
+      {children}
     </section>
   );
 }
