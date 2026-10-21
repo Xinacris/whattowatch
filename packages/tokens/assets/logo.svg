@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!--
+    The WhatToWatch mark: a VHS cassette on the shelf. The one master for every icon.
+    Fills are colour token names from ../src/index.ts; scripts/icons.mjs swaps in the values.
+    "full" is the mark; "small" is the same cassette for 16 and 32 px: chunkier body, bigger reels, no hubs.
+  -->
+  <rect id="bg" width="1024" height="1024" fill="shelf"/>
+  <g id="full">
+    <rect id="body" x="161" y="278" width="702" height="468" rx="44" fill="paper"/>
+    <rect id="window" x="293" y="395" width="439" height="176" rx="22" fill="shelf"/>
+    <circle id="reel" cx="395" cy="468" r="59" fill="paper"/>
+    <circle id="hub" cx="395" cy="468" r="22" fill="shelf"/>
+    <circle id="reel" cx="629" cy="468" r="59" fill="paper"/>
+    <circle id="hub" cx="629" cy="468" r="22" fill="shelf"/>
+    <rect id="strip" x="249" y="614" width="527" height="59" rx="15" fill="label"/>
+  </g>
+  <g id="small">
+    <!-- on a 64-unit grid: every edge lands on a whole pixel at 16 px (and at 32) -->
+    <rect id="body" x="64" y="256" width="896" height="512" rx="96" fill="paper"/>
+    <rect id="window" x="192" y="320" width="640" height="256" rx="32" fill="shelf"/>
+    <circle id="reel" cx="384" cy="448" r="64" fill="paper"/>
+    <circle id="reel" cx="640" cy="448" r="64" fill="paper"/>
+    <rect id="strip" x="192" y="640" width="640" height="64" rx="16" fill="label"/>
+  </g>
+</svg>
