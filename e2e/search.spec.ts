@@ -1,10 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { person } from "./helpers";
+
+/** The search box (on a phone the header's is folded behind a button, so take the one on screen). */
+const searchBox = (p: Page) => p.getByRole("combobox", { name: "Search titles and people" }).filter({ visible: true }).first();
+
+/** The filters, ready to tap: a sidebar on desktop, a sheet behind the "Filters" chip on a phone. */
+async function openFilters(p: Page) {
+  const chip = p.getByTestId("filters-chip");
+  if ((await chip.isVisible()) && (await chip.getAttribute("aria-expanded")) !== "true") await chip.click();
+  return p.getByRole("complementary", { name: "Filters" });
+}
 
 test("(e) suggestions are keyboard-navigable; Enter without a pick searches", async ({ browser }) => {
   const p = await person(browser);
   await p.goto("/");
-  const box = p.getByRole("combobox").first();
+  const box = searchBox(p);
   await box.fill("m");
   await p.waitForTimeout(400);
   await expect(p.getByRole("listbox", { name: "Search titles and people" }).first()).toBeHidden(); // one letter: nothing yet
@@ -27,7 +37,7 @@ test("(e) suggestions are keyboard-navigable; Enter without a pick searches", as
 test("(e) suggestions open the detail page; Turkish queries work", async ({ browser }) => {
   const p = await person(browser);
   await p.goto("/search");
-  const box = p.getByRole("combobox").first();
+  const box = searchBox(p);
   await box.fill("eşkıya");
   await expect(p.getByRole("listbox", { name: "Search titles and people" }).first().getByRole("option").first()).toBeVisible();
   await box.press("ArrowDown");
@@ -39,24 +49,26 @@ test("(e) filters live in the URL: reload and back keep them; only-my-services n
   const p = await person(browser);
   await p.goto("/search");
   await expect(p.getByTestId("search-result").first()).toBeVisible();
-  const filters = p.getByRole("complementary", { name: "Filters" });
-  await filters.getByRole("button", { name: "Comedy" }).click();
+  await (await openFilters(p)).getByRole("button", { name: "Comedy" }).click();
   await expect(p).toHaveURL(/g=comedy/);
-  await filters.getByRole("button", { name: "Movie", exact: true }).click();
+  await (await openFilters(p)).getByRole("button", { name: "Movie", exact: true }).click();
   await expect(p).toHaveURL(/type=movie.*g=comedy|g=comedy.*type=movie/);
   await p.reload();
-  await expect(filters.getByRole("button", { name: "Comedy" })).toHaveAttribute("aria-pressed", "true");
+  await expect((await openFilters(p)).getByRole("button", { name: "Comedy" })).toHaveAttribute("aria-pressed", "true");
   await p.goBack();
   await expect(p).toHaveURL(/g=comedy/);
   await expect(p).not.toHaveURL(/type=movie/);
-  await expect(filters.getByRole("button", { name: "Comedy" })).toHaveAttribute("aria-pressed", "true");
+  await expect((await openFilters(p)).getByRole("button", { name: "Comedy" })).toHaveAttribute("aria-pressed", "true");
 
   // Only my services: pick one service, every result's logos include it.
   // The panel remounts when the back navigation's render lands; "Movie" unpressed means it has.
-  await expect(filters.getByRole("button", { name: "Movie", exact: true })).toHaveAttribute("aria-pressed", "false");
+  // (On a phone that remount also closes the sheet, so open it again until it holds.)
+  await expect(async () => {
+    await expect((await openFilters(p)).getByRole("button", { name: "Movie", exact: true })).toHaveAttribute("aria-pressed", "false", { timeout: 1000 });
+  }).toPass();
   const before = await p.getByTestId("search-result").allInnerTexts();
-  await filters.getByTestId("only-mine").click();
-  const service = filters.getByRole("button", { name: /Netflix/ });
+  await (await openFilters(p)).getByTestId("only-mine").click();
+  const service = (await openFilters(p)).getByRole("button", { name: /Netflix/ });
   await service.click();
   await expect(p).toHaveURL(/on=8/);
   await expect(p.getByTestId("search-result").first()).toBeVisible();

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
 // Local: production builds of web + match (memory room store) behind the microfrontends proxy.
@@ -5,6 +6,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Protected preview: also set VERCEL_AUTOMATION_BYPASS_SECRET (the web project's "Protection Bypass for Automation").
 const remote = process.env.E2E_BASE_URL;
 const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+// Linux with the NVIDIA driver: WebKit's GPU compositor segfaults inside libnvidia-eglcore at random.
+// Mesa's EGL and Skia's CPU renderer keep it stable; elsewhere this is a no-op.
+const MESA_EGL = "/usr/share/glvnd/egl_vendor.d/50_mesa.json";
+const webkitEnv = existsSync(MESA_EGL) ? { launchOptions: { env: { ...process.env, __EGL_VENDOR_LIBRARY_FILENAMES: MESA_EGL, WEBKIT_SKIA_ENABLE_CPU_RENDERING: "1" } } } : {};
 
 export default defineConfig({
   testDir: "e2e",
@@ -14,7 +19,13 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: remote ?? "http://localhost:3024", locale: "en-US",
-    ...(bypass ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } } : {}), ...devices["Desktop Chrome"], viewport: { width: 1280, height: 1000 } },
+    ...(bypass ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } } : {}) },
+  // The whole suite on each. A test that can't apply to one says so with test.skip(condition, reason).
+  projects: [
+    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 1000 } } },
+    { name: "mobile-chromium", use: { ...devices["iPhone 14"], browserName: "chromium" } },
+    { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 1000 }, ...webkitEnv } },
+  ],
   webServer: remote ? undefined : [
     { command: "pnpm --filter whattowatch-web start", port: 3000, reuseExistingServer: true },
     { command: "pnpm --filter whattowatch-match start", port: 3001, reuseExistingServer: true, env: { ROOM_STORE: "memory" } },
