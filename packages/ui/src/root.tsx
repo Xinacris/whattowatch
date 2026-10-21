@@ -8,7 +8,7 @@ import { Shell } from "./shell";
 /** The full document for either app: tokens, fonts, prefs context, header and footer. */
 export function RootDocument({ lang, region, services = [], children }: { lang: Lang; region: string; services?: number[]; children: ReactNode }) {
   return (
-    <html lang={lang} className={fontVars} data-theme="dark">
+    <html lang={lang} className={fontVars}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: tokensCss() }} />
       </head>

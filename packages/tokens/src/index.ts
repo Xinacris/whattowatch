@@ -14,16 +14,6 @@ export const colors = {
   ok: "#9BC53D",
 } as const;
 
-export const lightColors = {
-  ...colors,
-  shelf: "#F3E9DA",
-  shelfRaised: "#EADCC6",
-  shelfHigh: "#E0CFB4",
-  rule: "#2A2018",
-  paper: "#16110D",
-  paperDim: "#5E4E3E",
-} as const;
-
 export type ColorToken = keyof typeof colors;
 
 export const fonts = {
@@ -67,5 +57,5 @@ export const motion = {
 /** CSS custom properties generated from the tokens above, so Tailwind reads the same source as mobile. */
 export function tokensCss(): string {
   const vars = (c: Record<string, string>) => Object.entries(c).map(([k, v]) => `--wtw-${k}:${v};`).join("");
-  return `:root{${vars(colors)}--wtw-border:${border.width}px;}` + `:root[data-theme="light"]{${vars(lightColors)}}`;
+  return `:root{${vars(colors)}--wtw-border:${border.width}px;}`;
 }

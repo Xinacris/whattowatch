@@ -16,8 +16,8 @@
   --radius-tape: 2px;
 }
 
-html { background: var(--wtw-shelf); color: var(--wtw-paper); color-scheme: dark; }
-:root[data-theme="light"] { color-scheme: light; }
+:root { color-scheme: dark; } /* dark only: form controls and native UI follow */
+html { background: var(--wtw-shelf); color: var(--wtw-paper); }
 body { background: var(--wtw-shelf); font-family: var(--font-sans); min-height: 100dvh; -webkit-font-smoothing: antialiased; }
 
 /* Film grain. Static on purpose: grain that crawls is a screensaver. */

@@ -1,12 +1,41 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreBinaries": ["eslint"],
-  "ignoreDependencies": ["server-only", "postcss", "expo-font", "expo-updates", "expo-system-ui"],
+  "ignoreBinaries": [
+    "eslint",
+    "microfrontends"
+  ],
+  "ignoreDependencies": [
+    "server-only",
+    "expo-font",
+    "expo-updates",
+    "expo-system-ui"
+  ],
   "workspaces": {
-    ".": { "entry": ["e2e/**/*.ts"] },
-    "apps/web": { "entry": ["eslint.config.js"] },
-    "apps/match": { "entry": ["eslint.config.js"] },
-    "apps/mobile": { "entry": ["src/app/**/*.tsx", "eslint.config.mjs"] },
-    "packages/{core,tokens,ui}": { "entry": ["eslint.config.js"] }
+    ".": {
+      "entry": [
+        "e2e/**/*.ts"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "eslint.config.js"
+      ]
+    },
+    "apps/match": {
+      "entry": [
+        "eslint.config.js"
+      ]
+    },
+    "apps/mobile": {
+      "entry": [
+        "src/app/**/*.tsx",
+        "eslint.config.mjs"
+      ]
+    },
+    "packages/{core,tokens,ui}": {
+      "entry": [
+        "eslint.config.js"
+      ]
+    }
   }
 }
