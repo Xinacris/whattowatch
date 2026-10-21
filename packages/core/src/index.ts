@@ -21,6 +21,7 @@ export * from "./deck-session";
 export * from "./rounds";
 export * from "./results";
 export * from "./search";
+export * from "./staff-pick";
 export * from "./item-key";
 export * from "./collections";
 export * from "./movie-meta";

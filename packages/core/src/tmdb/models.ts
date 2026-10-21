@@ -18,6 +18,8 @@ export interface TitleSummary {
   genreIds: number[];
   /** Original language, ISO 639-1. */
   language?: string;
+  /** TMDB vote count, where the list had it. */
+  votes?: number;
 }
 
 export type ProviderKind = "sub" | "free" | "ads" | "rent" | "buy";
