@@ -14,7 +14,8 @@ export const MAX_MEMBERS = 12;
 /** Who is using the app. Anonymous today; `getViewer()` in each app is the seam for login later. */
 export interface Viewer { id: string; name: string }
 
-export interface Member extends Viewer { joinedAt: number; lastSeen: number }
+/** `dealt` = how long the deck was at their last poll, so someone who finished and left still counts after a later extension. */
+export interface Member extends Viewer { joinedAt: number; lastSeen: number; dealt?: number }
 
 export interface RoomMeta { code: string; filters: RoomFilters; seed: string; createdAt: number; hostId: string }
 
@@ -107,11 +108,23 @@ export async function firstBook(filters: RoomFilters, seed: string, deal: DealPa
   return fillBook({ deck: [], pool: [], page: 0, exhausted: false }, ROUND_FIRST, filters, seed, deal);
 }
 
+/** Left (no heartbeat) after voting on every card they were dealt. They count in the results, but never block or extend a round. */
+export function departedFinished(room: Pick<Room, "members" | "ballots" | "book">, now: number): Member[] {
+  const present = new Set(presentMembers(room.members, now).map((m) => m.id));
+  return room.members
+    .filter((m) => {
+      const dealt = room.book.deck.slice(0, m.dealt ?? room.book.deck.length);
+      return !present.has(m.id) && dealt.length > 0 && dealt.every((k) => room.ballots[m.id]?.[k]);
+    })
+    .sort((a, b) => a.joinedAt - b.joinedAt);
+}
+
 export function toView(room: Room, viewerId: string, now: number): RoomView {
   const members = presentMembers(room.members, now);
   const ids = members.map((m) => m.id);
   const round = roomRound(room.book, room.ballots, ids);
-  const picks = ids.map((id) => {
+  const voters = [...ids, ...departedFinished(room, now).map((m) => m.id)];
+  const picks = voters.map((id) => {
     const b = room.ballots[id] ?? {};
     return { likes: room.book.deck.filter((k) => b[k] === "like"), seen: room.book.deck.filter((k) => b[k] === "seen") };
   });
@@ -144,7 +157,6 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
   const existing = room.members.find((m) => m.id === viewer.id);
   if (!existing && presentMembers(room.members, now).length >= MAX_MEMBERS) return { ok: false, reason: "full" };
   const member: Member = { id: viewer.id, name: viewer.name, joinedAt: existing?.joinedAt ?? now, lastSeen: now };
-  await store.upsertMember(code, member);
   const members = [...room.members.filter((m) => m.id !== viewer.id), member];
   const present = presentMembers(members, now).map((m) => m.id);
   const round = roomRound(room.book, room.ballots, present);
@@ -157,6 +169,8 @@ export async function syncRoom(store: RoomStore, code: string, viewer: Viewer, n
     if (next && (await store.extendDeck(code, book.deck.length, final))) book = final;
     else book = (await store.get(code))?.book ?? book;
   }
+  member.dealt = book.deck.length;
+  await store.upsertMember(code, member);
   return { ok: true, value: toView({ ...room, members, book }, viewer.id, now) };
 }
 

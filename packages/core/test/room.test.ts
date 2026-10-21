@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { castVote, createMemoryStore, fillBook, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, type DealPage, type RoomStore, type TitleKey, type Vote } from "../src";
+import { castVote, createMemoryStore, fillBook, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, toView, type Ballot, type DealPage, type Member, type Room, type RoomStore, type TitleKey, type Vote } from "../src";
 
 const A = { id: "a", name: "Ayşe" };
 const B = { id: "b", name: "Burak" };
@@ -112,6 +112,46 @@ describe("live rooms", () => {
     expect(await syncRoom(s, "ABC23", A, 0)).toEqual({ ok: false, reason: "bad_code" });
     expect(await syncRoom(s, "ZZZ999", A, 0)).toEqual({ ok: false, reason: "not_found" });
     expect(await syncRoom(s, "ABC234", A, ROOM_TTL_MS + 1)).toEqual({ ok: false, reason: "expired" });
+  });
+});
+
+describe("people who leave after finishing (#7)", () => {
+  it("A and B finish, B goes quiet, C finishes later: B's votes still count", async () => {
+    const deal = dealer();
+    const s = await room(deal);
+    for (const v of [A, B, C]) await syncRoom(s, "ABC234", v, 0, deal);
+    await swipeAll(s, A, 6, 1, deal);
+    const r = await syncRoom(s, "ABC234", B, 1, deal);
+    const deck = r.ok ? r.value.deck : [];
+    for (const [i, k] of deck.entries()) await castVote(s, "ABC234", B, k, i < 5 ? "like" : i === 5 ? "nope" : "nope", 1, deal);
+    await castVote(s, "ABC234", B, "m1", "nope", 1, deal); // B says no to m1
+    const later = PRESENCE_MS + 10;
+    const c = await swipeAll(s, C, 6, later, deal);
+    expect(c.ok && c.value).toMatchObject({ done: true, waitingOn: [], results: ["m2", "m3", "m4", "m5"] });
+    expect((await s.get("ABC234"))?.book.deck).toHaveLength(15); // B never triggers or blocks an extension
+  });
+
+  const deck = Array.from({ length: 20 }, (_, i) => `m${i + 1}` as TitleKey);
+  const all = (n: number, likes: number): Ballot => Object.fromEntries(deck.slice(0, n).map((k, i) => [k, i < likes ? "like" : "nope"]));
+  const member = (id: string, lastSeen: number, dealt?: number): Member => ({ id, name: id.toUpperCase(), joinedAt: id.charCodeAt(0), lastSeen, ...(dealt === undefined ? {} : { dealt }) });
+  const view = (members: Member[], ballots: Record<string, Ballot>, size = 15) =>
+    toView({ code: "ABC234", filters, seed: "s", createdAt: 0, hostId: "a", members, ballots, book: { deck: deck.slice(0, size), pool: [], page: 1, exhausted: false } }, "a", 100_000);
+  const gone = 100_000 - PRESENCE_MS - 1;
+  it.each([
+    ["a departed member who finished counts", [member("a", 100_000), member("c", 100_000), member("b", gone, 15)], { a: all(15, 6), b: all(15, 2), c: all(15, 6) }, 15, ["m1", "m2"], []],
+    ["a departed member who didn't finish is left out, as before", [member("a", 100_000), member("c", 100_000), member("b", gone, 15)], { a: all(15, 6), b: all(9, 2), c: all(15, 6) }, 15, ["m1", "m2", "m3", "m4", "m5", "m6"], []],
+    ["finished the 15 they were dealt, the deck grew to 20 after: still counted, never waited on", [member("a", 100_000), member("c", 100_000), member("b", gone, 15)], { a: all(20, 6), b: all(15, 3), c: all(20, 6) }, 20, ["m1", "m2", "m3"], []],
+    ["stored before `dealt` existed: finished means the whole deck", [member("a", 100_000), member("c", 100_000), member("b", gone)], { a: all(15, 6), b: all(15, 2), c: all(15, 6) }, 15, ["m1", "m2"], []],
+    ["a departed member is never in waitingOn", [member("a", 100_000), member("c", 100_000), member("b", gone, 15)], { a: all(15, 6), b: all(15, 2), c: all(10, 6) }, 15, null, ["C"]],
+  ] as const)("%s", (_name, members, ballots, size, results, waitingOn) => {
+    const v = view([...members], ballots as unknown as Record<string, Ballot>, size);
+    expect(v.results).toEqual(results);
+    expect(v.waitingOn).toEqual(waitingOn);
+    expect(v.members.map((m) => m.id)).not.toContain("b");
+  });
+  it("one present, one departed and finished: the departed member makes it a pair", () => {
+    const v = view([member("a", 100_000), member("b", gone, 15)], { a: all(15, 6), b: all(15, 5) });
+    expect(v.results).toEqual(["m1", "m2", "m3", "m4", "m5"]);
   });
 });
 
