@@ -1,9 +1,21 @@
+import type { Viewport } from "next";
 import type { ReactNode } from "react";
-import { tokensCss } from "@wtw/tokens";
+import { colors, tokensCss } from "@wtw/tokens";
 import type { Lang } from "@wtw/core";
 import { fontVars } from "./fonts";
 import { PrefsProvider } from "./prefs-client";
 import { Shell } from "./shell";
+
+export const PRODUCTION_SITE = new URL("https://whattowatchxinny.vercel.app");
+/**
+ * Where absolute metadata URLs (link preview images) point: this deployment on Vercel (a preview
+ * shows its own image), the microfrontends proxy locally.
+ */
+const host = process.env.VERCEL_ENV === "production" ? null : (process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL);
+export const siteBase = process.env.VERCEL_ENV === "production" ? PRODUCTION_SITE : new URL(host ? `https://${host}` : "http://localhost:3024");
+
+/** Both apps' viewport: the browser chrome in the shelf colour. Each layout exports it as `viewport`. */
+export const siteViewport: Viewport = { themeColor: colors.shelf, colorScheme: "dark" };
 
 /** The full document for either app: tokens, fonts, prefs context, header and footer. */
 export function RootDocument({ lang, region, services = [], children }: { lang: Lang; region: string; services?: number[]; children: ReactNode }) {

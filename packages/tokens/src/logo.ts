@@ -5,3 +5,6 @@ export const logoMark = {
   viewBox: "161 278 702 468",
   d: "M205 278h614a44 44 0 0 1 44 44v380a44 44 0 0 1 -44 44h-614a44 44 0 0 1 -44 -44v-380a44 44 0 0 1 44 -44ZM315 395h395a22 22 0 0 1 22 22v132a22 22 0 0 1 -22 22h-395a22 22 0 0 1 -22 -22v-132a22 22 0 0 1 22 -22ZM336 468a59 59 0 1 0 118 0a59 59 0 1 0 -118 0ZM373 468a22 22 0 1 0 44 0a22 22 0 1 0 -44 0ZM570 468a59 59 0 1 0 118 0a59 59 0 1 0 -118 0ZM607 468a22 22 0 1 0 44 0a22 22 0 1 0 -44 0ZM264 614h497a15 15 0 0 1 15 15v29a15 15 0 0 1 -15 15h-497a15 15 0 0 1 -15 -15v-29a15 15 0 0 1 15 -15Z",
 } as const;
+
+/** The cassette in its colours on transparent, cropped to the body: for images drawn on the server (link previews). */
+export const cassetteSvg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"161 278 702 468\" width=\"702\" height=\"468\"><rect x=\"161\" y=\"278\" width=\"702\" height=\"468\" rx=\"44\" fill=\"#F3E9DA\"/><rect x=\"293\" y=\"395\" width=\"439\" height=\"176\" rx=\"22\" fill=\"#16110D\"/><circle cx=\"395\" cy=\"468\" r=\"59\" fill=\"#F3E9DA\"/><circle cx=\"395\" cy=\"468\" r=\"22\" fill=\"#16110D\"/><circle cx=\"629\" cy=\"468\" r=\"59\" fill=\"#F3E9DA\"/><circle cx=\"629\" cy=\"468\" r=\"22\" fill=\"#16110D\"/><rect x=\"249\" y=\"614\" width=\"527\" height=\"59\" rx=\"15\" fill=\"#FFC21A\"/></svg>";

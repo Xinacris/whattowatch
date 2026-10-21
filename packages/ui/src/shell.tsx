@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import { Link } from "@vercel/microfrontends/next/client";
 import { t, type Lang } from "@wtw/core";
 import { HeaderSearch } from "./header-search";
+import { Logo } from "./logo";
 import { LangToggle, RegionSelect } from "./prefs-client";
 
 export function Wordmark() {
   return (
-    <Link href="/" className="group flex items-baseline gap-2">
-      <span className="display text-2xl text-paper group-hover:text-label">WhatToWatch</span>
+    <Link href="/" className="flex items-baseline gap-2 text-2xl text-paper hover:text-label focus-visible:text-label">
+      <Logo />
+      <span className="display" data-testid="wordmark">WhatToWatch</span>
       <span className="sticker -rotate-3 max-sm:hidden">Open late</span>
     </Link>
   );
