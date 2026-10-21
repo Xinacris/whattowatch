@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { castVote, createMemoryStore, fillBook, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, toView, type Ballot, type DealPage, type Member, type Room, type RoomStore, type TitleKey, type Vote } from "../src";
+import { castVote, createMemoryStore, fillBook, firstBook, PRESENCE_MS, ROOM_TTL_MS, sanitizeFilters, syncRoom, toView, type Ballot, type DealPage, type Member, type RoomStore, type TitleKey, type Vote } from "../src";
 
 const A = { id: "a", name: "Ayşe" };
 const B = { id: "b", name: "Burak" };
