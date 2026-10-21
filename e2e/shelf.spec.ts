@@ -5,7 +5,8 @@ import { api } from "./helpers";
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3024";
 
 async function landing(browser: Browser, opts: Parameters<Browser["newContext"]>[0] = {}): Promise<{ p: Page; row: Locator; list: Locator }> {
-  const ctx = await browser.newContext({ locale: "en-US", viewport: { width: 1280, height: 900 }, ...opts });
+  // A desktop with a mouse unless a test says otherwise: the buttons are for fine pointers.
+  const ctx = await browser.newContext({ locale: "en-US", viewport: { width: 1280, height: 900 }, hasTouch: false, isMobile: false, ...opts });
   await ctx.addCookies([{ name: "wtw_lang", value: "en", url: BASE }, { name: "wtw_region", value: "US", url: BASE }]);
   const p = await ctx.newPage();
   await p.goto("/");
@@ -109,11 +110,40 @@ test("(f) resizing 1280 → 375 → 1280 keeps the buttons and fades in step", a
   await expect(row.getByRole("button", { name: "Next" })).toBeEnabled();
 });
 
-test("(g) the cast row scrolls the same way, with no native scrollbar", async ({ page }) => {
+test("(g) the cast row scrolls the same way, with no native scrollbar, on this project's device", async ({ page }) => {
   await page.goto("/title/movie/603");
   const list = page.getByRole("list", { name: "Cast" });
   await expect(list.locator("li").first()).toBeVisible();
   expect(await list.evaluate((el) => el.offsetHeight - el.clientHeight)).toBe(0);
-  await page.getByRole("button", { name: "Next" }).click();
+  const mouse = await page.evaluate(() => matchMedia("(hover: hover) and (pointer: fine)").matches);
+  if (mouse) await page.getByRole("button", { name: "Next" }).click();
+  else {
+    await expect(page.getByTestId("shelf-nav").first()).toBeHidden(); // a phone swipes the row instead
+    await list.evaluate((el) => el.scrollBy({ left: 200, behavior: "instant" as ScrollBehavior }));
+  }
   expect(await settled(list)).toBeGreaterThan(0);
+});
+
+test("(h) 375 with a mouse: every row heading stays on one line next to its buttons, in EN and TR", async ({ browser }) => {
+  for (const lang of ["en", "tr"] as const) {
+    const ctx = await browser.newContext({ locale: lang === "tr" ? "tr-TR" : "en-US", viewport: { width: 375, height: 812 }, hasTouch: false, isMobile: false });
+    await ctx.addCookies([{ name: "wtw_lang", value: lang, url: BASE }, { name: "wtw_region", value: "TR", url: BASE }]);
+    const p = await ctx.newPage();
+    await p.goto("/");
+    const headings = p.getByTestId("shelf-heading");
+    await expect(headings.first()).toBeVisible();
+    expect(await p.evaluate(() => matchMedia("(hover: hover) and (pointer: fine)").matches)).toBe(true);
+    for (let i = 0; i < (await headings.count()); i++) {
+      const h = headings.nth(i).locator("> *").first();
+      await h.scrollIntoViewIfNeeded();
+      const { height, line, text } = await h.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { height: el.getBoundingClientRect().height, line: parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2, text: el.textContent };
+      });
+      expect(height, `${lang}: ${text}`).toBeLessThanOrEqual(line + 1);
+      const nav = headings.nth(i).locator("xpath=..").getByTestId("shelf-nav");
+      if (await nav.count()) await expect(nav).toBeVisible();
+    }
+    await ctx.close();
+  }
 });

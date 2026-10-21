@@ -43,3 +43,17 @@ for (const width of [375, 1280]) {
   });
 }
 
+// v2.5: a browse row heading at 375 with a mouse (buttons showing), EN and TR.
+for (const lang of ["en", "tr"] as const) {
+  test(`browse heading at 375 with a mouse (${lang})`, async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: lang === "tr" ? "tr-TR" : "en-US", viewport: { width: 375, height: 812 }, hasTouch: false, isMobile: false });
+    await ctx.addCookies([{ name: "wtw_lang", value: lang, url: BASE }, { name: "wtw_region", value: "TR", url: BASE }]);
+    const p = await ctx.newPage();
+    await p.goto("/");
+    const row = p.locator("section").filter({ has: p.getByText(lang === "tr" ? "100 dakikanın altında" : "Under 100 minutes") }).first();
+    await row.scrollIntoViewIfNeeded();
+    await expect(row.getByTestId("shelf-nav")).toBeVisible();
+    await p.waitForTimeout(400);
+    await row.screenshot({ path: `${OUT}/v25-browse-heading-375-${lang}.png` });
+  });
+}

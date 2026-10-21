@@ -44,13 +44,15 @@ export function ShelfScroller({ label, end, ariaLabel, headerClassName = "", lis
     move(e.key === "ArrowRight" ? 1 : -1, false);
   }
 
+  if (Children.count(children) === 0) return null; // an empty row is no row
   const nav = "label inline-flex size-7 items-center justify-center border-2 border-paper hover:bg-paper hover:text-shelf disabled:opacity-30 disabled:pointer-events-none";
   return (
     <>
       {(label || end || overflows) && (
-        <div className={`flex items-center justify-between gap-4 ${headerClassName}`}>
-          {label}
-          <div className="flex shrink-0 items-center gap-4">
+        <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${headerClassName}`}>
+          {/* The heading never wraps for its own buttons: they drop below it when both don't fit. Longer than the row: an ellipsis. */}
+          <div className="min-w-0 max-w-full [&>*]:truncate" data-testid="shelf-heading">{label}</div>
+          <div className="ml-auto flex shrink-0 items-center gap-4">
             {end}
             {overflows && (
               <div className="shelf-nav gap-1" data-testid="shelf-nav">
