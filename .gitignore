@@ -50,3 +50,6 @@ next-env.d.ts
 .claude/
 **/.claude/
 skills-lock.json
+
+# /brag promo-video output: brag-output/ and the dated brag-output-YYYY-MM-DD-HHmmss/ of later runs
+/brag-output*/
