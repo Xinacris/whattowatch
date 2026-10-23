@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { linkDeck, makeSeed, nextLink, picksOf, swapLink, voterLabels, withVoter, type LinkPayload } from "@wtw/core";
+import { linkDeck, makeSeed, nextLink, picksOf, sameVoter, swapLink, voterLabels, withVoter, type LinkPayload } from "@wtw/core";
 import { useDeck, remaining } from "@/lib/deck-store";
 import { markVoted } from "@/lib/link-progress";
 import { linkUrl } from "@/lib/share";
@@ -47,6 +47,7 @@ function FriendResults({ payload, name, deck, voters, addPerson }: ResultsProps)
       <ResultsScreen
         results={results}
         names={voterLabels(voters.map((v) => v.name))}
+        me={voters.findIndex((v) => sameVoter(v.name, name))}
         sendBack={linkUrl(nextLink(payload, deck, voters, true))}
         addPerson={addPerson}
         onSwap={swapTo(payload)}

@@ -1,24 +1,26 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { formatRating, formatRuntime, itemHref, listNames, type DeckCard, type ItemKey } from "@wtw/core";
+import { formatRating, formatRuntime, itemHref, listNames, seenByLine, type DeckCard, type SharedResult } from "@wtw/core";
 import { CollectionCard, Poster, ProviderList, seriesLabel, useT, usePrefs } from "@wtw/ui";
 import { useCards } from "@/lib/use-cards";
 import { rememberScroll, useScrollReturn } from "@/lib/scroll-return";
 import { shareUrl } from "@/lib/share";
 
 interface Props {
-  results: ItemKey[];
+  results: SharedResult[];
   names: string[];
+  me: number; // index in `names`, -1 when this device didn't vote
   sendBack?: string | null; // results link
   addPerson?: string | null; // same deck for one more voter
   onSwap?: (() => void) | null;
 }
 
-export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: Props) {
+export function ResultsScreen({ results, names, me, sendBack, addPerson, onSwap }: Props) {
   const t = useT();
   const { lang } = usePrefs();
-  const cards = useCards(results);
+  const cards = useCards(results.map((r) => r.key));
+  const seen = new Map(results.map((r) => [r.key, seenByLine(lang, names, r.seenBy, me)]));
   const zero = results.length === 0;
   const [more, setMore] = useState(false); // zero overlap: two buttons up front, the rest behind "More"
   useScrollReturn(cards.length === results.length);
@@ -29,7 +31,7 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
       {zero && <p className="mt-6 max-w-md text-lg">{t("results.zeroBody")}</p>}
       {!zero && cards.length < results.length && <p className="label mt-8 animate-pulse text-paper-dim">{t("results.loading")}</p>}
       <ol className="mt-10 flex flex-col gap-6">
-        {cards.map((c, i) => <ResultCard key={c.key} card={c} rank={i + 1} />)}
+        {cards.map((c, i) => <ResultCard key={c.key} card={c} rank={i + 1} seen={seen.get(c.key) ?? null} />)}
       </ol>
       <div className="mt-12 flex flex-wrap items-center gap-3 border-t-2 border-rule pt-6">
         {zero && onSwap && <button type="button" className="btn btn-label" onClick={onSwap} data-testid="swap">{t("results.swap")} →</button>}
@@ -44,7 +46,7 @@ export function ResultsScreen({ results, names, sendBack, addPerson, onSwap }: P
   );
 }
 
-function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
+function ResultCard({ card, rank, seen }: { card: DeckCard; rank: number; seen: string | null }) {
   const t = useT();
   const { lang, region } = usePrefs();
   const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
@@ -58,6 +60,7 @@ function ResultCard({ card, rank }: { card: DeckCard; rank: number }) {
         <span className="display text-4xl text-label">{rank}</span>
         <p className="display text-3xl break-words sm:text-4xl">{card.title}</p>
         <p className="label text-paper-dim">{meta}</p>
+        {seen && <p className="label break-words text-paper-dim" data-testid="seen-by">{seen}</p>}
         {first && <p className="font-semibold" data-testid="start-with">{t("series.startWith", { title: first.title, year: first.year ?? "" })}</p>}
         <ProviderList providers={card.providers} link={card.providersLink ?? null} region={region} lang={lang} empty={t("results.notStreaming", { region })} />
         {/* Same tab, so the phone's back button returns here; the results are stored, so they're still here. */}

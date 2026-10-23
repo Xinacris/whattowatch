@@ -31,8 +31,8 @@ beforeEach(async () => {
 afterEach(unmount);
 
 describe("Deck: keyboard", () => {
-  it("→ yes, ← nope, ↑ seen it, each moving to the next card", async () => {
-    for (const [key, vote, next] of [["{ArrowRight}", "like", "Film 2"], ["{ArrowLeft}", "nope", "Film 3"], ["{ArrowUp}", "seen", "Film 4"]] as const) {
+  it("→ yes, ← nope, ↑ rewatch (seen it, again), each moving to the next card", async () => {
+    for (const [key, vote, next] of [["{ArrowRight}", "like", "Film 2"], ["{ArrowLeft}", "nope", "Film 3"], ["{ArrowUp}", "rewatch", "Film 4"]] as const) {
       await userEvent.keyboard(key);
       await flown();
       expect(onVote).toHaveBeenLastCalledWith(expect.any(String), vote);
@@ -65,8 +65,8 @@ describe("Deck: keyboard", () => {
 
 describe("Deck: buttons", () => {
   const button = (name: RegExp) => [...document.querySelectorAll("button")].find((b) => name.test(b.textContent ?? ""))!;
-  it("Yes, Nope and Seen it vote the top card", async () => {
-    for (const [name, vote] of [[/Yes/, "like"], [/Nope/, "nope"], [/Seen it/, "seen"]] as const) {
+  it("Yes, Nope and Rewatch vote the top card", async () => {
+    for (const [name, vote] of [[/Yes/, "like"], [/Nope/, "nope"], [/Rewatch/, "rewatch"]] as const) {
       await userEvent.click(button(name));
       await flown();
       expect(onVote).toHaveBeenLastCalledWith(expect.any(String), vote);

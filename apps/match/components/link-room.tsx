@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { linkStage, listNames, voterLabels, withoutVoter, type LinkPayload } from "@wtw/core";
+import { linkStage, listNames, sameVoter, voterLabels, withoutVoter, type LinkPayload } from "@wtw/core";
 import { Notice, useT, usePrefs } from "@wtw/ui";
 import { forgetVote, votedHere } from "@/lib/link-progress";
 import { useLinkResults } from "@/lib/use-link-results";
@@ -69,17 +69,17 @@ export function LinkRoom({ payload: original }: { payload: LinkPayload }) {
     case "waiting":
       return <ShareScreen title={t("waiting.title")} line={t("waiting.body")} url={window.location.href}>{passPhone}</ShareScreen>;
     case "results":
-      return <LinkResults payload={payload} names={names} passPhone={payload.finished ? null : passPhone} />;
+      return <LinkResults payload={payload} names={names} me={payload.voters.findIndex((v) => sameVoter(v.name, name ?? ""))} passPhone={payload.finished ? null : passPhone} />;
     case "solo":
       return <Notice title={t("results.solo")} action={<Link href="/match/new" className="btn btn-label">{t("landing.start")} →</Link>} />;
   }
 }
 
-function LinkResults({ payload, names, passPhone }: { payload: LinkPayload; names: string[]; passPhone: ReactNode }) {
+function LinkResults({ payload, names, me, passPhone }: { payload: LinkPayload; names: string[]; me: number; passPhone: ReactNode }) {
   const results = useLinkResults(payload.deck, payload.voters);
   return (
     <>
-      <ResultsScreen results={results} names={names} addPerson={payload.finished ? null : window.location.href} onSwap={swapTo(payload)} />
+      <ResultsScreen results={results} names={names} me={me} addPerson={payload.finished ? null : window.location.href} onSwap={swapTo(payload)} />
       {passPhone && <div className="mx-auto flex max-w-4xl px-4 pb-12 sm:px-6">{passPhone}</div>}
     </>
   );

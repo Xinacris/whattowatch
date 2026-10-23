@@ -3,7 +3,8 @@ import { deal } from "@/lib/deal";
 import { getRoomStore } from "@/lib/store";
 import { badRequest, body, liveOff, roomNow, noStore, parseViewer, reply } from "@/lib/http";
 
-const VOTES: (Vote | null)[] = ["like", "nope", "seen", null];
+// "seen" is the pre-v2.7 up-swipe (a skip): a tab still open from before may send it once more.
+const VOTES: (Vote | null)[] = ["like", "nope", "rewatch", "seen", null];
 
 export async function POST(req: Request, ctx: RouteContext<"/match/api/rooms/[code]/[action]">) {
   const store = getRoomStore();

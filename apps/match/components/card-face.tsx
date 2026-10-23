@@ -17,7 +17,7 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
   const { lang } = usePrefs();
   const like = Math.min(1, Math.max(0, drag.x / 110));
   const nope = Math.min(1, Math.max(0, -drag.x / 110));
-  const seen = Math.min(1, Math.max(0, -drag.y / 110)) * (Math.abs(drag.y) > Math.abs(drag.x) ? 1 : 0);
+  const rewatch = Math.min(1, Math.max(0, -drag.y / 110)) * (Math.abs(drag.y) > Math.abs(drag.x) ? 1 : 0);
   const rating = formatRating(card.rating) && `${formatRating(card.rating)}/10`;
   const series = card.collection;
   const meta = (series ? [seriesLabel(lang, series), rating] : [card.year, formatRuntime(card.runtime), rating]).filter(Boolean).join("  ·  ");
@@ -25,7 +25,7 @@ export function CardFace({ card, flipped, drag }: { card: DeckCard; flipped: boo
     <div className="relative flex h-full flex-col overflow-hidden border-2 border-paper bg-shelf-raised">
       <Stamp text={t("deck.like")} tone="var(--wtw-label)" opacity={like} className="top-6 left-5 -rotate-12" />
       <Stamp text={t("deck.nope")} tone="var(--wtw-nope)" opacity={nope} className="top-6 right-5 rotate-12" />
-      <Stamp text={t("deck.seen")} tone="var(--wtw-paper)" opacity={seen} className="bottom-32 left-1/2 -translate-x-1/2 -rotate-3" />
+      <Stamp text={t("deck.rewatch")} tone="var(--wtw-paper)" opacity={rewatch} className="bottom-32 left-1/2 -translate-x-1/2 -rotate-3" />
       {flipped && series ? <SeriesBack series={series} hit={card.hit?.id ?? null} /> : flipped ? (
         <div className="flex-1 overflow-y-auto p-5">
           <p className="label text-paper-dim">{meta}</p>

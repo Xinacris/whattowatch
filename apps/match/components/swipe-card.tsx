@@ -10,15 +10,16 @@ interface Props { onCommit(vote: Vote): void; onTap(): void; children(drag: { x:
 const FLY: Record<Vote, { x: number; y: number; r: number }> = {
   like: { x: 1.4, y: 0.1, r: 24 },
   nope: { x: -1.4, y: 0.1, r: -24 },
+  rewatch: { x: 0, y: -1.4, r: 0 },
   seen: { x: 0, y: -1.4, r: 0 },
 };
 
 function decide(dx: number, dy: number, vx: number, vy: number): Vote | null {
   const { commitDistance: d, commitVelocity: v } = motion;
-  if (-dy > d && Math.abs(dy) > Math.abs(dx)) return "seen";
+  if (-dy > d && Math.abs(dy) > Math.abs(dx)) return "rewatch";
   if (dx > d || (vx > v && dx > 30)) return "like";
   if (dx < -d || (vx < -v && dx < -30)) return "nope";
-  if (vy < -v && dy < -30) return "seen";
+  if (vy < -v && dy < -30) return "rewatch";
   return null;
 }
 

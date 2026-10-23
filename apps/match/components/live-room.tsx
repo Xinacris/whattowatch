@@ -64,7 +64,7 @@ export function LiveRoom({ code }: { code: string }) {
       {stage === "waiting" && <Notice title={t("room.through")} body={view.waitingOn.length ? t("room.waitingFor", { names: listNames(lang, view.waitingOn) }) : t("common.loading")} />}
       {stage === "results" && (
         <>
-          <ResultsScreen results={view.results ?? []} names={view.voters ?? view.members.map((m) => m.name)} />
+          <ResultsScreen results={(view.results ?? []).map((key) => ({ key, seenBy: view.seenBy?.[key] ?? [] }))} names={view.voters ?? view.members.map((m) => m.name)} me={view.you} />
           <div className="mx-auto max-w-4xl px-4 sm:px-6"><Link href="/match/new" className="btn btn-ghost">{t("shortlist.newNight")}</Link></div>
         </>
       )}

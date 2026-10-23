@@ -16,7 +16,7 @@ interface Props {
   banner?: string | null; // "five more on the pile"
 }
 
-const KEYS: Record<string, Vote> = { ArrowRight: "like", ArrowLeft: "nope", ArrowUp: "seen" };
+const KEYS: Record<string, Vote> = { ArrowRight: "like", ArrowLeft: "nope", ArrowUp: "rewatch" };
 
 export function Deck({ onVote, onUndo, aside, exhausted, banner }: Props) {
   const t = useT();
@@ -67,7 +67,7 @@ export function Deck({ onVote, onUndo, aside, exhausted, banner }: Props) {
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
         <button type="button" className="btn btn-ghost justify-center border-nope text-nope" disabled={!top} onClick={() => card.current?.fling("nope")}>← {t("deck.nope")}</button>
-        <button type="button" className="btn btn-ghost justify-center px-3 text-paper-dim" disabled={!top} onClick={() => card.current?.fling("seen")}>↑ {t("deck.seen")}</button>
+        <button type="button" className="btn btn-ghost justify-center px-3 text-paper-dim" disabled={!top} onClick={() => card.current?.fling("rewatch")}>↑ {t("deck.rewatch")}</button>
         <button type="button" className="btn btn-label justify-center" disabled={!top} onClick={() => card.current?.fling("like")}>{t("deck.like")} →</button>
       </div>
       <div className="flex items-center justify-between gap-3">
