@@ -43,10 +43,10 @@ function encodeV2(p: { seed: string; deck: TitleKey[]; voters: { name: string; l
 
 const deck: ItemKey[] = ["m550", "t1396", "c:2150", "m27205", "m13", "t100088", "c:119", "m603"];
 
-describe("link codec v3", () => {
+describe("link codec (writes v4 since v2.7; v3 was the same plus nothing for rewatch)", () => {
   it("keeps the deck in order, including ids that go down, and film series", () => {
     const back = decodeLink(encodeLink({ filters, seed: "k3x9pq2m", deck, voters: [], finished: false }));
-    expect(back).toMatchObject({ version: 3, seed: "k3x9pq2m", deck, finished: false });
+    expect(back).toMatchObject({ version: 4, seed: "k3x9pq2m", deck, finished: false });
     expect(back?.filters).toEqual({ ...filters, providers: [8, 337, 1899] });
   });
   it("round-trips voters, Turkish names, seen and the results flag", () => {
@@ -55,14 +55,14 @@ describe("link codec v3", () => {
       { name: "Çağla Işık", likes: ["m13"] as ItemKey[], seen: ["c:119"] as ItemKey[] },
     ];
     const back = decodeLink(encodeLink({ filters, seed: "s1", deck, voters, finished: true }));
-    expect(back?.voters).toEqual(voters);
+    expect(back?.voters).toEqual(voters.map((v) => ({ ...v, rewatch: [] })));
     expect(back?.finished).toBe(true);
   });
   it("30 items (movies, series, film series), 3 voters stays well under 600 characters", () => {
     const big = Array.from({ length: 30 }, (_, i) => (i % 5 === 4 ? `c:${700_000 - i * 9_001}` : i % 3 ? `m${950_000 - i * 31_337}` : `t${200_000 + i * 4_111}`) as ItemKey);
     const voters = ["Ayşe", "Burak", "Cem Özdemir"].map((name, j) => ({ name, likes: big.filter((_, i) => (i + j) % 3 === 0), seen: big.filter((_, i) => i % 7 === j) }));
     const token = encodeLink({ filters, seed: "k3x9pq2m", deck: big, voters, finished: false });
-    console.log(`v3 link, 30 items (6 film series) + 3 voters: ${token.length} chars`);
+    console.log(`v4 link, 30 items (6 film series) + 3 voters: ${token.length} chars`);
     expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(token.length).toBeLessThan(600);
     expect(decodeLink(token)?.deck).toEqual(big);
@@ -89,9 +89,9 @@ describe("v2 links", () => {
     expect(p?.filters).toEqual({ ...filters, providers: [8, 337, 1899] });
     expect(p?.voters).toEqual([{ name: "Ayşe", likes: ["m550", "m13"], seen: ["m603"] }, { name: "Burak", likes: ["t1396", "m13"], seen: [] }]);
   });
-  it("re-encode as v3 with the same deck", () => {
+  it("re-encode as v4 with the same deck", () => {
     const p = decodeLink(token)!;
-    expect(decodeLink(encodeLink(p))).toMatchObject({ version: 3, deck: v2deck, voters: p.voters });
+    expect(decodeLink(encodeLink(p))).toMatchObject({ version: 4, deck: v2deck, voters: p.voters.map((v) => ({ ...v, rewatch: [] })) });
   });
 });
 

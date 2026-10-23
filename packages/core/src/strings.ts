@@ -148,11 +148,11 @@ const en = {
   "lobby.start": "Start swiping",
   "deck.like": "Yes",
   "deck.nope": "Nope",
-  "deck.seen": "Seen it",
+  "deck.rewatch": "Rewatch",
   "deck.undo": "Undo",
   "deck.flip": "Tap for the plot",
   "deck.flipBack": "Tap for the cover",
-  "deck.keys": "← nope   → yes   ↑ seen it",
+  "deck.keys": "← nope   → yes   ↑ seen it, again",
   "deck.loadingMore": "Pulling more tapes off the shelf…",
   "deck.empty": "That's the whole shelf for these filters.",
   "deck.loosen": "Loosen filters",
@@ -193,6 +193,14 @@ const en = {
   "results.more": "More",
   "results.solo": "Only one person has swiped this stack. Results need two.",
   "results.loading": "Pulling the winners off the shelf…",
+  "results.you": "You",
+  "results.seenOne": "{name} has seen it",
+  "results.seenYou": "You've seen it",
+  "results.seenSome": "{names} have seen it",
+  "results.seenSomeYou": "{names} have seen it",
+  "results.seenMore": "{names} and {n} more have seen it",
+  "results.seenMoreYou": "{names} and {n} more have seen it",
+  "results.seenAll": "You've all seen it. Rewatch night.",
   "room.waitingFor": "Waiting for {names}.",
   "room.through": "You're through the stack.",
   "room.notFound": "No room with that code. Typo, or the night's already over.",
@@ -351,11 +359,11 @@ const tr: Record<StringKey, string> = {
   "lobby.start": "Kaydırmaya başla",
   "deck.like": "Evet",
   "deck.nope": "Geç",
-  "deck.seen": "İzledim",
+  "deck.rewatch": "Yine izlerim",
   "deck.undo": "Geri al",
   "deck.flip": "Konusu için dokun",
   "deck.flipBack": "Kapak için dokun",
-  "deck.keys": "← geç   → evet   ↑ izledim",
+  "deck.keys": "← geç   → evet   ↑ izledim, yine izlerim",
   "deck.loadingMore": "Raftan yeni kasetler geliyor…",
   "deck.empty": "Bu filtrelerle raf bu kadar.",
   "deck.loosen": "Filtreleri gevşet",
@@ -396,6 +404,14 @@ const tr: Record<StringKey, string> = {
   "results.more": "Diğer",
   "results.solo": "Bu desteyi sadece bir kişi kaydırmış. Sonuç için iki kişi lazım.",
   "results.loading": "Kazananlar raftan iniyor…",
+  "results.you": "Sen",
+  "results.seenOne": "{name} izlemişti",
+  "results.seenYou": "Sen izlemiştin",
+  "results.seenSome": "{names} izlemişti",
+  "results.seenSomeYou": "{names} izlemiştiniz",
+  "results.seenMore": "{names} ve {n} kişi daha izlemişti",
+  "results.seenMoreYou": "{names} ve {n} kişi daha izlemiştiniz",
+  "results.seenAll": "Hepiniz izlemiştiniz. Tekrar izleme gecesi.",
   "room.waitingFor": "{names} bekleniyor.",
   "room.through": "Desteyi bitirdin.",
   "room.notFound": "Bu kodla bir oda yok. Ya yanlış yazıldı ya da gece çoktan bitti.",
@@ -418,6 +434,26 @@ export function listNames(lang: Lang, names: readonly string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   const and = lang === "tr" ? " ve " : " and ";
   return names.slice(0, -1).join(", ") + and + names[names.length - 1];
+}
+
+/** Names shown before "and N more": a line under a result stays one line at 375. */
+const SEEN_SHOWN = 2;
+
+/**
+ * The quiet line under a shared title: who has already seen it. `seenBy` and `me` are indices into
+ * `voters` (me = -1 when this device didn't vote). Null when nobody has. No case suffixes on names,
+ * so Turkish names never need one: "Aslı ve Mali izlemişti".
+ */
+export function seenByLine(lang: Lang, voters: readonly string[], seenBy: readonly number[], me: number): string | null {
+  const who = [...new Set(seenBy)].filter((i) => i >= 0 && i < voters.length);
+  if (!who.length) return null;
+  if (voters.length >= 2 && who.length === voters.length) return t(lang, "results.seenAll");
+  const you = who.includes(me);
+  if (you && who.length === 1) return t(lang, "results.seenYou");
+  const names = [...(you ? [t(lang, "results.you")] : []), ...who.filter((i) => i !== me).map((i) => voters[i]!)];
+  if (names.length === 1) return t(lang, "results.seenOne", { name: names[0]! });
+  if (names.length <= SEEN_SHOWN) return t(lang, you ? "results.seenSomeYou" : "results.seenSome", { names: listNames(lang, names) });
+  return t(lang, you ? "results.seenMoreYou" : "results.seenMore", { names: names.slice(0, SEEN_SHOWN).join(", "), n: names.length - SEEN_SHOWN });
 }
 
 const GENRE_NAMES: Record<Lang, Record<string, string>> = {

@@ -1,6 +1,6 @@
 import type { RoomFilters } from "./filters";
-import type { Ballot, Vote } from "./match";
-import { matchesFromVoters } from "./results";
+import { isLike, type Ballot, type Vote } from "./match";
+import { picksFrom, sharedResults } from "./results";
 import { CODE_LENGTH } from "./room-code";
 import { LIKE_TARGET, MAX_VOTED, ROUND_EXTRA, ROUND_FIRST } from "./rounds";
 import type { ItemKey } from "./item-key";
@@ -26,8 +26,11 @@ export interface RoomMeta { code: string; filters: RoomFilters; seed: string; cr
  */
 export interface DeckBook { deck: ItemKey[]; pool: ItemKey[]; page: number; exhausted: boolean; series?: number[] }
 
-/** Results, computed once when the round is done and never again: presence can't change a finished night. */
-export interface FinalResults { results: ItemKey[]; voters: Viewer[]; deckLength: number; at: number }
+/**
+ * Results, computed once when the round is done and never again: presence can't change a finished night.
+ * `seenBy` = title key -> member ids who swiped up on it, stored at the same moment (missing before v2.7).
+ */
+export interface FinalResults { results: ItemKey[]; voters: Viewer[]; deckLength: number; at: number; seenBy?: Record<string, string[]> }
 
 /** `final` is missing until the room is done (and on rooms stored before v2.6). */
 export interface Room extends RoomMeta { members: Member[]; ballots: Record<string, Ballot>; book: DeckBook; final?: FinalResults }
@@ -44,6 +47,10 @@ export interface RoomView extends RoomMeta {
   results: ItemKey[] | null;
   /** Names of who the results were computed from, once done. */
   voters: string[] | null;
+  /** Once done: title key -> who has seen it, as indices into `voters`. Only titles someone swiped up on. */
+  seenBy: Record<string, number[]> | null;
+  /** Your index in `voters`, -1 if you didn't vote. */
+  you: number;
   expiresAt: number;
 }
 
@@ -106,7 +113,7 @@ export interface RoomRound { done: boolean; pending: string[]; extendTo: number 
 export function roomRound(book: DeckBook, ballots: Readonly<Record<string, Ballot>>, present: readonly string[]): RoomRound {
   const pending = present.filter((id) => book.deck.some((k) => !ballots[id]?.[k]));
   if (!present.length || pending.length) return { done: false, pending, extendTo: null };
-  const below = present.some((id) => book.deck.filter((k) => ballots[id]?.[k] === "like").length < LIKE_TARGET);
+  const below = present.some((id) => book.deck.filter((k) => isLike(ballots[id]?.[k])).length < LIKE_TARGET);
   const canGrow = book.deck.length < MAX_VOTED && (book.pool.length > 0 || !book.exhausted);
   if (below && canGrow) return { done: false, pending, extendTo: Math.min(MAX_VOTED, book.deck.length + ROUND_EXTRA) };
   return { done: true, pending, extendTo: null };
@@ -134,12 +141,18 @@ function votersOf(room: Room, now: number): Member[] {
 
 function finalOf(room: Room, now: number): FinalResults {
   const voters = votersOf(room, now);
-  const picks = voters.map((m) => {
-    const b = room.ballots[m.id] ?? {};
-    return { likes: room.book.deck.filter((k) => b[k] === "like"), seen: room.book.deck.filter((k) => b[k] === "seen") };
-  });
+  const picks = voters.map((m) => picksFrom(room.book.deck, room.ballots[m.id] ?? {}));
   // No seriesOf: a room deck never holds a film next to its own series card (fillBook skips both ways).
-  return { results: matchesFromVoters(room.book.deck, picks), voters: voters.map(({ id, name }) => ({ id, name })), deckLength: room.book.deck.length, at: now };
+  const shared = sharedResults(room.book.deck, picks);
+  const seenBy = Object.fromEntries(shared.filter((r) => r.seenBy.length).map((r) => [r.key, r.seenBy.map((i) => voters[i]!.id)]));
+  return { results: shared.map((r) => r.key), voters: voters.map(({ id, name }) => ({ id, name })), deckLength: room.book.deck.length, at: now, seenBy };
+}
+
+/** What the results screen gets: who has seen each title as indices into the voter names, and where you are among them. */
+function seenView(final: FinalResults, viewerId: string): Pick<RoomView, "seenBy" | "you"> {
+  const ids = final.voters.map((v) => v.id);
+  const seenBy = Object.fromEntries(Object.entries(final.seenBy ?? {}).map(([k, who]) => [k, who.map((id) => ids.indexOf(id)).filter((i) => i >= 0)]));
+  return { seenBy, you: ids.indexOf(viewerId) };
 }
 
 export function toView(room: Room, viewerId: string, now: number): RoomView {
@@ -149,7 +162,7 @@ export function toView(room: Room, viewerId: string, now: number): RoomView {
   if (final) {
     // Done for good. Only the people who voted keep their deck; anyone else just sees the results.
     const voted = final.voters.some((v) => v.id === viewerId);
-    return { ...meta, members, mine: voted ? (room.ballots[viewerId] ?? {}) : {}, deck: voted ? room.book.deck : [], waitingOn: [], done: true, results: final.results, voters: final.voters.map((v) => v.name) };
+    return { ...meta, members, mine: voted ? (room.ballots[viewerId] ?? {}) : {}, deck: voted ? room.book.deck : [], waitingOn: [], done: true, results: final.results, voters: final.voters.map((v) => v.name), ...seenView(final, viewerId) };
   }
   const round = roomRound(room.book, room.ballots, members.map((m) => m.id));
   const computed = round.done ? finalOf(room, now) : null;
@@ -162,6 +175,7 @@ export function toView(room: Room, viewerId: string, now: number): RoomView {
     done: round.done,
     results: computed?.results ?? null,
     voters: computed?.voters.map((v) => v.name) ?? null,
+    ...(computed ? seenView(computed, viewerId) : { seenBy: null, you: -1 }),
   };
 }
 
