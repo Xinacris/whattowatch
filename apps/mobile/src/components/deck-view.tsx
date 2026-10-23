@@ -45,7 +45,7 @@ export function DeckView({ onVote, onUndo, header, banner, exhausted, onLoosen }
       </View>
       <View style={s.row}>
         <Btn tone="nope" title={`← ${t("deck.nope")}`} disabled={!top} onPress={() => card.current?.fling("nope")} style={{ flex: 1 }} />
-        <Btn title={`↑ ${t("deck.seen")}`} disabled={!top} onPress={() => card.current?.fling("seen")} />
+        <Btn title={`↑ ${t("deck.rewatch")}`} disabled={!top} onPress={() => card.current?.fling("rewatch")} />
         <Btn tone="label" title={`${t("deck.like")} →`} disabled={!top} onPress={() => card.current?.fling("like")} style={{ flex: 1 }} />
       </View>
       <Btn title={`↶ ${t("deck.undo")}`} disabled={!state.last} onPress={undo} style={{ borderWidth: 0, alignSelf: "flex-start", paddingHorizontal: 0, paddingVertical: 4 }} />

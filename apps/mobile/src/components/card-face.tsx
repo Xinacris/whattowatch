@@ -5,7 +5,7 @@ import { usePrefs } from "@/lib/prefs";
 import { colors, font, fontSize, s } from "@/lib/theme";
 import { SeriesBack, SeriesHitTape, SeriesSticker } from "./series-face";
 
-function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: SharedValue<number>; y: SharedValue<number>; side: "like" | "nope" | "seen" }) {
+function Stamp({ text, tone, x, y, side }: { text: string; tone: string; x: SharedValue<number>; y: SharedValue<number>; side: "like" | "nope" | "rewatch" }) {
   const style = useAnimatedStyle(() => {
     const o = side === "like" ? x.value / 110 : side === "nope" ? -x.value / 110 : Math.abs(y.value) > Math.abs(x.value) ? -y.value / 110 : 0;
     return { opacity: Math.min(1, Math.max(0, o)) };
@@ -27,7 +27,7 @@ export function CardFace({ card, flipped, x, y }: { card: DeckCard; flipped: boo
     <View style={{ flex: 1, borderWidth: 2, borderColor: colors.paper, backgroundColor: colors.shelfRaised, overflow: "hidden" }}>
       <Stamp text={t("deck.like")} tone={colors.label} x={x} y={y} side="like" />
       <Stamp text={t("deck.nope")} tone={colors.nope} x={x} y={y} side="nope" />
-      <Stamp text={t("deck.seen")} tone={colors.paper} x={x} y={y} side="seen" />
+      <Stamp text={t("deck.rewatch")} tone={colors.paper} x={x} y={y} side="rewatch" />
       {flipped && series ? <SeriesBack series={series} hit={card.hit?.id ?? null} /> : flipped ? (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
           <Text style={s.label}>{meta}</Text>

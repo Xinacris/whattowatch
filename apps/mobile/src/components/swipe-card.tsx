@@ -15,10 +15,10 @@ const SPRING = { stiffness: motion.spring.stiffness, damping: motion.spring.damp
 function decide(dx: number, dy: number, vx: number, vy: number): Vote | null {
   "worklet";
   const d = motion.commitDistance, v = motion.commitVelocity;
-  if (-dy > d && Math.abs(dy) > Math.abs(dx)) return "seen";
+  if (-dy > d && Math.abs(dy) > Math.abs(dx)) return "rewatch";
   if (dx > d || (vx > v && dx > 30)) return "like";
   if (dx < -d || (vx < -v && dx < -30)) return "nope";
-  if (vy < -v && dy < -30) return "seen";
+  if (vy < -v && dy < -30) return "rewatch";
   return null;
 }
 
@@ -37,7 +37,7 @@ export const SwipeCard = forwardRef<SwipeHandle, Props>(function SwipeCard({ onC
     "worklet";
     gone.value = true;
     const tx = vote === "like" ? width * 1.5 : vote === "nope" ? -width * 1.5 : x.value;
-    const ty = vote === "seen" ? -width * 2 : y.value + 40;
+    const ty = vote === "rewatch" || vote === "seen" ? -width * 2 : y.value + 40;
     y.value = withTiming(ty, { duration: motion.flyOutMs });
     x.value = withTiming(tx, { duration: motion.flyOutMs }, () => scheduleOnRN(commit, vote));
   };

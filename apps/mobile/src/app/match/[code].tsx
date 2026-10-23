@@ -63,7 +63,7 @@ export default function Room() {
           header={<RoundCounter liked={tape.liked} card={tape.card} of={tape.of} />} />
       )}
       {stage === "waiting" && <Notice title={t("room.through")} body={view.waitingOn.length ? t("room.waitingFor", { names: listNames(lang, view.waitingOn) }) : t("common.loading")} />}
-      {stage === "results" && <ResultsView results={view.results ?? []} names={view.voters ?? view.members.map((m) => m.name)} onLoosen={() => router.replace("/new")} />}
+      {stage === "results" && <ResultsView results={(view.results ?? []).map((key) => ({ key, seenBy: view.seenBy?.[key] ?? [] }))} names={view.voters ?? view.members.map((m) => m.name)} me={view.you} onLoosen={() => router.replace("/new")} />}
     </View>
   );
 }

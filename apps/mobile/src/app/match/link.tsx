@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { decodeLink, linkStage, listNames, voterLabels, withoutVoter, type LinkPayload, type LinkStage } from "@wtw/core";
+import { decodeLink, linkStage, listNames, sameVoter, voterLabels, withoutVoter, type LinkPayload, type LinkStage } from "@wtw/core";
 import { Friend, Initiator, PassPhone, swap } from "@/components/link-flows";
 import { NameGate } from "@/components/name-gate";
 import { ResultsView } from "@/components/results-view";
@@ -73,13 +73,13 @@ export default function LinkRoom() {
       {stage === "swipe" && <Text style={[s.label, { color: colors.label, paddingHorizontal: space[4], paddingTop: space[3] }]}>{t("link.yourTurn", { names: listNames(lang, names) })}</Text>}
       {stage === "swipe" && <Friend key={viewer.name} payload={payload} name={viewer.name} />}
       {stage === "waiting" && <ShareView title={t("waiting.title")} line={t("waiting.body")} url={here}>{passPhone}</ShareView>}
-      {stage === "results" && <LinkResults payload={payload} names={names} here={here} footer={payload.finished ? null : passPhone} />}
+      {stage === "results" && <LinkResults payload={payload} names={names} me={payload.voters.findIndex((v) => sameVoter(v.name, viewer.name))} here={here} footer={payload.finished ? null : passPhone} />}
       {stage === "solo" && <Notice title={t("results.solo")} action={newNight} />}
     </View>
   );
 }
 
-function LinkResults({ payload, names, here, footer }: { payload: LinkPayload; names: string[]; here: string; footer: ReactNode }) {
+function LinkResults({ payload, names, me, here, footer }: { payload: LinkPayload; names: string[]; me: number; here: string; footer: ReactNode }) {
   const results = useLinkResults(payload.deck, payload.voters);
-  return <ResultsView results={results} names={names} addPerson={payload.finished ? null : here} onSwap={swap(payload)} onLoosen={() => router.replace("/new")} footer={footer} />;
+  return <ResultsView results={results} names={names} me={me} addPerson={payload.finished ? null : here} onSwap={swap(payload)} onLoosen={() => router.replace("/new")} footer={footer} />;
 }
