@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { counter, finalSwipe, person, setUpNight, sitDown, swipeRun } from "./helpers";
+import { counter, finalSwipe, person, setUpNight, sitDown, swipeRun, topCard } from "./helpers";
 
 // v2.7: ↑ is "seen it, and I'd watch it again". It counts as a yes, the title can be shared,
 // and the results say who has seen it. Phone width; live rooms run locally unless E2E_LIVE=1.
@@ -88,13 +88,16 @@ for (const lang of ["en", "tr"] as const) {
       await a.getByPlaceholder("Kim evet dedi, belli olsun").fill("Aslı");
       await a.getByRole("button", { name: /Kaydırmaya başla/ }).click();
     }
-    const boxes = await Promise.all([/^← /, /^↑ /, / →$/].map(async (name) => {
-      const b = a.getByRole("button", { name });
-      await expect(b).toBeVisible();
-      return (await b.boundingBox())!;
-    }));
-    expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1); // one row
-    expect(Math.max(...boxes.map((b) => b.height))).toBeLessThan(56); // no label wraps to a second line
-    expect(Math.max(...boxes.map((b) => b.x + b.width))).toBeLessThanOrEqual(PHONE.width);
+    await topCard(a);
+    await a.evaluate(() => document.fonts.ready);
+    // Measured until the layout settles (fonts, the deck dealing in): one row, one line each (< 56 px), inside 375.
+    const row = async () => {
+      const boxes = await Promise.all([/^← /, /^↑ /, / →$/].map(async (name) => (await a.getByRole("button", { name }).boundingBox())!));
+      const rows = new Set(boxes.map((b) => Math.round(b.y))).size;
+      const tallest = Math.max(...boxes.map((b) => b.height));
+      const right = Math.max(...boxes.map((b) => b.x + b.width));
+      return rows === 1 && tallest < 56 && right <= PHONE.width ? "fits" : JSON.stringify({ rows, tallest, right });
+    };
+    await expect.poll(row).toBe("fits");
   });
 }
