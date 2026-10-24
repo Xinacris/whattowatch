@@ -359,7 +359,7 @@ const tr: Record<StringKey, string> = {
   "lobby.start": "Kaydırmaya başla",
   "deck.like": "Evet",
   "deck.nope": "Geç",
-  "deck.rewatch": "Yine izlerim",
+  "deck.rewatch": "Tekrar",
   "deck.undo": "Geri al",
   "deck.flip": "Konusu için dokun",
   "deck.flipBack": "Kapak için dokun",

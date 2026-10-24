@@ -76,3 +76,25 @@ test("keyboard ↑ and the ↑ Rewatch button send a rewatch: it counts toward t
   await up.click();
   await expect(counter(a)).toHaveText(/Liked 2 \/ 5 · card 3 of 15/i);
 });
+
+for (const lang of ["en", "tr"] as const) {
+  test(`${lang} at 375: the three answers sit on one line each, in one row that fits`, async ({ browser }) => {
+    const a = await person(browser, PHONE);
+    await a.context().addCookies([{ name: "wtw_lang", value: lang, url: process.env.E2E_BASE_URL ?? "http://localhost:3024" }]);
+    if (lang === "en") await setUpNight(a, "Aslı", "Pass a link");
+    else {
+      await a.goto("/match/new");
+      await a.getByText("Link gönder", { exact: true }).click();
+      await a.getByPlaceholder("Kim evet dedi, belli olsun").fill("Aslı");
+      await a.getByRole("button", { name: /Kaydırmaya başla/ }).click();
+    }
+    const boxes = await Promise.all([/^← /, /^↑ /, / →$/].map(async (name) => {
+      const b = a.getByRole("button", { name });
+      await expect(b).toBeVisible();
+      return (await b.boundingBox())!;
+    }));
+    expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1); // one row
+    expect(Math.max(...boxes.map((b) => b.height))).toBeLessThan(56); // no label wraps to a second line
+    expect(Math.max(...boxes.map((b) => b.x + b.width))).toBeLessThanOrEqual(PHONE.width);
+  });
+}
