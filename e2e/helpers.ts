@@ -5,8 +5,8 @@ const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 /** fetch() for the app's own API from the test runner, through preview protection when a bypass secret is set. */
 export const api = (url: string) => fetch(url, bypass ? { headers: { "x-vercel-protection-bypass": bypass } } : undefined);
 
-export async function person(browser: Browser): Promise<Page> {
-  const ctx = await browser.newContext({ locale: "en-US" });
+export async function person(browser: Browser, viewport?: { width: number; height: number }): Promise<Page> {
+  const ctx = await browser.newContext({ locale: "en-US", ...(viewport ? { viewport } : {}) });
   await ctx.addCookies([{ name: "wtw_lang", value: "en", url: process.env.E2E_BASE_URL ?? "http://localhost:3024" }]);
   return ctx.newPage();
 }
@@ -38,9 +38,9 @@ export async function swipe(page: Page, key: "ArrowRight" | "ArrowLeft" | "Arrow
   return before;
 }
 
-/** Swipe a run of cards: "L" yes, "N" no, "S" seen it. Returns the titles in order. */
+/** Swipe a run of cards: "L" yes, "N" no, "R" rewatch (seen it, would watch again). Returns the titles in order. */
 export async function swipeRun(page: Page, seq: string): Promise<string[]> {
-  const keys = { L: "ArrowRight", N: "ArrowLeft", S: "ArrowUp" } as const;
+  const keys = { L: "ArrowRight", N: "ArrowLeft", R: "ArrowUp" } as const;
   const titles: string[] = [];
   for (const c of seq) titles.push(await swipe(page, keys[c as keyof typeof keys]));
   return titles;

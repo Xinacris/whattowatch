@@ -22,12 +22,11 @@ test("(a) 4 yeses after 15 deals five more; the 5th yes opens the share screen m
 test("(b) five yeses share at once; the friend gets exactly the voted cards, no pop-ups, then results", async ({ browser }) => {
   const a = await person(browser);
   await setUpNight(a, "Ayşe", "Pass a link");
-  const deck = [...(await swipeRun(a, "LSLLNNL")), await finalSwipe(a, "ArrowRight")]; // 7 votes + 1 seen it
+  // A rewatch (↑) is a yes since v2.7: card 2 counts toward the five and goes into the friend's deck.
+  const voted = [...(await swipeRun(a, "LRLNNL")), await finalSwipe(a, "ArrowRight")];
   await expect(a.getByTestId("share-screen")).toContainText("You said yes to 5.");
   const link = await a.getByTestId("share-url").inputValue();
   await a.getByTestId("share").click();
-  const seen = deck[1];
-  const voted = deck.filter((t) => t !== seen); // seen it isn't in the friend's deck
 
   // Initiator opening their own link: waiting, not a second deck.
   await a.reload();
