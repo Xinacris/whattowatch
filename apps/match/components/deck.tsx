@@ -66,9 +66,9 @@ export function Deck({ onVote, onUndo, aside, exhausted, banner }: Props) {
         {!top && <DeckEmpty loading={state.loading} error={state.error} done={state.done} onRetry={() => void state.fetchMore()} exhausted={exhausted} />}
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
-        <button type="button" className="btn btn-ghost justify-center border-nope text-nope" disabled={!top} onClick={() => card.current?.fling("nope")}>← {t("deck.nope")}</button>
-        <button type="button" className="btn btn-ghost justify-center px-3 text-paper-dim" disabled={!top} onClick={() => card.current?.fling("rewatch")}>↑ {t("deck.rewatch")}</button>
-        <button type="button" className="btn btn-label justify-center" disabled={!top} onClick={() => card.current?.fling("like")}>{t("deck.like")} →</button>
+        <button type="button" className="btn btn-ghost justify-center whitespace-nowrap px-3 border-nope text-nope" disabled={!top} onClick={() => card.current?.fling("nope")}>← {t("deck.nope")}</button>
+        <button type="button" className="btn btn-ghost justify-center whitespace-nowrap px-3 text-paper-dim" disabled={!top} onClick={() => card.current?.fling("rewatch")}>↑ {t("deck.rewatch")}</button>
+        <button type="button" className="btn btn-label justify-center whitespace-nowrap px-3" disabled={!top} onClick={() => card.current?.fling("like")}>{t("deck.like")} →</button>
       </div>
       <div className="flex items-center justify-between gap-3">
         <button type="button" className="label text-paper-dim underline-offset-4 hover:text-label hover:underline disabled:opacity-30" disabled={!state.last} onClick={undo}>↶ {t("deck.undo")}</button>
